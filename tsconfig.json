@@ -12,6 +12,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitAny": true,
+    "noUncheckedSideEffectImports": false,
 
     "rootDir": "./src",
     "outDir": "./dist/",
@@ -22,7 +23,12 @@
     "moduleResolution": "bundler",
     "esModuleInterop": true,
     "jsx": "react",
-    "lib": ["es6", "dom", "ES2015"]
+    "lib": ["es6", "dom", "ES2019"],
+    "types": ["w3c-web-usb", "w3c-web-hid"],
+    "paths": {
+      "@ux/*": ["./src/components/ux/*"],
+      "@model/*": ["./src/model/*"]
+    }
   },
   "include": ["./src"]
 }

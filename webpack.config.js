@@ -1,6 +1,9 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { LoaderOptionsPlugin } = require("webpack");
+const TerserPlugin = require("terser-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 
 const PROJECT = "mini-keyboard";
 const PAGE_TITLE = "Mini Keyboard";
@@ -8,6 +11,7 @@ const PAGE_TITLE = "Mini Keyboard";
 module.exports = (env, argv) => {
   const isProduction = argv.mode === "production";
   const distPath = path.join(__dirname, "dist");
+  const srcPath = path.join(__dirname, "src");
 
   return {
     entry: "./src/index.tsx",
@@ -33,6 +37,7 @@ module.exports = (env, argv) => {
 
     devtool: "source-map",
     resolve: {
+      plugins: [new TsconfigPathsPlugin()],
       extensions: [".ts", ".tsx", ".js"],
     },
 
@@ -47,6 +52,15 @@ module.exports = (env, argv) => {
           enforce: "pre",
           test: /\.js$/,
           loader: "source-map-loader",
+        },
+        {
+          test: /\.css$/i,
+          include: srcPath,
+          use: [
+            isProduction ? MiniCssExtractPlugin.loader : "style-loader",
+            "css-loader",
+            "postcss-loader",
+          ],
         },
       ],
     },
@@ -69,6 +83,18 @@ module.exports = (env, argv) => {
         filename: `${PROJECT}.html`,
         template: "index.template.html",
       }),
+      ...(isProduction
+        ? [
+            new MiniCssExtractPlugin({
+              filename: `${PROJECT}.[contenthash].css`,
+            }),
+          ]
+        : []),
     ],
+
+    optimization: {
+      minimize: isProduction,
+      minimizer: [new TerserPlugin()],
+    },
   };
 };
