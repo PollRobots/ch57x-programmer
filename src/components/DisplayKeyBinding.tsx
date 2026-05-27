@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React from "react";
 
 import { KeyChord, Macro, modifiersToString } from "@model/keyboard";
 import { useKeyboardLayout } from "@model/useKeyboardLayout";
@@ -10,13 +10,13 @@ export type DisplayKeyBindingProps = {
 
 export function DisplayKeyBinding({ macro }: DisplayKeyBindingProps) {
   return (
-    <Suspense fallback="...">
+    <>
       {macro.type == "Keyboard" && (
         <DisplayKeyboardMacro keyChords={macro.keyChords} />
       )}
       {macro.type == "Mouse" && <DisplayMouseMacro />}
       {macro.type == "Media" && <DisplayMediaMacro />}
-    </Suspense>
+    </>
   );
 }
 
@@ -39,7 +39,7 @@ function DisplayKeyboardMacro({ keyChords }: DisplayKeyboardMacroProps) {
   );
 }
 
-function DisplayKeyChord({ modifiers, code }: KeyChord) {
+export function DisplayKeyChord({ modifiers, code }: KeyChord) {
   const { getCodeName } = useKeyboardLayout();
   const modifierString = React.useMemo(
     () => modifiersToString(modifiers),
@@ -58,7 +58,7 @@ function DisplayKeyChord({ modifiers, code }: KeyChord) {
     }
     if (codeName.length === 1) {
       return (
-        <span className="inline-block size-6 rounded-sm border border-neutral-500">
+        <span className="inline-block size-6 rounded-sm border border-neutral-500 text-center">
           {codeName.toLocaleUpperCase()}
         </span>
       );

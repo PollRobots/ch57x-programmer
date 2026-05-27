@@ -33,7 +33,10 @@ export type KeyBinding = {
   layer: number;
   key: Key;
   expansion: Macro;
+  origin: KeyBindingOrigin;
 };
+
+export type KeyBindingOrigin = "device" | "editor" | "placeholder";
 
 export type EncoderAction = "ccw" | "press" | "cw";
 export function encoderActionValue(encoderAction: EncoderAction): number {

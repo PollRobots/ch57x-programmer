@@ -1,7 +1,9 @@
+import { Asterisk } from "lucide-react";
 import React from "react";
 import { twMerge } from "tailwind-merge";
 
-import { Macro } from "@model/keyboard";
+import { KeyBindingOrigin, Macro } from "@model/keyboard";
+import { Text } from "@ux/Typography";
 
 import { DisplayKeyBinding } from "./DisplayKeyBinding";
 
@@ -9,6 +11,7 @@ export type KeyboardKeyProps = {
   as?: "div" | "button";
   variant?: "button" | "encoder-ccw" | "encoder-cw" | "encoder";
   macro: Macro | undefined;
+  origin: KeyBindingOrigin;
   selected?: boolean;
 } & Omit<React.HTMLAttributes<HTMLElement>, "children">;
 
@@ -47,6 +50,7 @@ export function KeyboardKey({
   as = "div",
   variant = "button",
   selected = false,
+  origin,
   ...other
 }: KeyboardKeyProps) {
   const Component = as;
@@ -61,7 +65,21 @@ export function KeyboardKey({
       )}
       {...other}
     >
-      {macro && <DisplayKeyBinding macro={macro} />}
+      {macro && (
+        <div className="col-start-1 row-start-1">
+          <DisplayKeyBinding macro={macro} />
+        </div>
+      )}
+      {origin === "editor" && (
+        <div className="col-start-1 row-start-1 self-start justify-self-start p-1">
+          <Asterisk className="size-3 text-red-500" />
+        </div>
+      )}
+      {origin === "placeholder" && (
+        <div className="col-start-1 row-start-1 self-start p-1">
+          <Text size="xs">Placholder</Text>
+        </div>
+      )}
     </Component>
   );
 }

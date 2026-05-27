@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDebounceCallback } from "usehooks-ts";
+
+import { WELL_KNOWN_CODES } from "./key_codes";
 import {
+  EncoderAction,
   KeyBinding,
   Keyboard,
   KeyboardDeviceType,
   keysAreEqual,
 } from "./keyboard";
-import { useDebounceCallback } from "usehooks-ts";
 
 export type KeyboardDevice = {
   keyboard: Keyboard;
@@ -34,6 +37,49 @@ export function useKeyboardDevice({
   const [errors, setErrors] = useState<Error[]>([]);
   const pendingBindings = useRef<KeyBinding[]>([]);
   const [keyBindings, setKeyBindings] = useState<KeyBinding[]>([]);
+
+  const defaultBindings = useMemo(() => {
+    const defaultBindings: KeyBinding[] = [];
+    for (let layer = 0; layer != 3; layer++) {
+      for (let button = 0; button < deviceType.buttons; button++) {
+        defaultBindings.push({
+          layer,
+          key: button,
+          expansion: {
+            type: "Keyboard",
+            options: {
+              delay: 0,
+            },
+            keyChords: [
+              { modifiers: new Set(), code: WELL_KNOWN_CODES[button]! },
+            ],
+          },
+          origin: "placeholder",
+        });
+      }
+      for (let encoder = 0; encoder < deviceType.encoders; encoder++) {
+        defaultBindings.push(
+          ...["ccw", "press", "cw"].map<KeyBinding>((action, i) => ({
+            layer,
+            key: [encoder, action as EncoderAction],
+            expansion: {
+              type: "Keyboard",
+              options: { delay: 0 },
+              keyChords: [
+                {
+                  modifiers: new Set(),
+                  code: WELL_KNOWN_CODES[deviceType.buttons + encoder * 3 + i]!,
+                },
+              ],
+            },
+            origin: "placeholder",
+          }))
+        );
+      }
+    }
+
+    return defaultBindings;
+  }, [deviceType.buttons, deviceType.encoders]);
 
   const updateKeyBindings = useDebounceCallback(
     () => {
@@ -146,7 +192,7 @@ export function useKeyboardDevice({
   return {
     name: keyboard.name,
     keyboardDeviceType: deviceType,
-    keyBindings,
+    keyBindings: keyBindings.length === 0 ? defaultBindings : keyBindings,
     errors,
     busy: pending,
     readDeviceType,

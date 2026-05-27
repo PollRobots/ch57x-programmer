@@ -435,6 +435,7 @@ export function makeKeyboard884(buttons: number, knobs: number): Keyboard {
               options: { delay: 0 },
               keyChords,
             },
+            origin: "device",
           };
         }
         case "Media":

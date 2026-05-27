@@ -1,5 +1,6 @@
-import { MousePointerClick, RotateCcw, RotateCw } from "lucide-react";
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { twJoin } from "tailwind-merge";
 
 import {
   KeyBinding,
@@ -11,10 +12,11 @@ import { makeKeyboard884 } from "@model/keyboard_884x";
 import { scanForKeyboard } from "@model/usb";
 import { KeyboardDevice, useKeyboardDevice } from "@model/useKeyboardDevice";
 import { KeyboardLayoutProvider } from "@model/useKeyboardLayout";
-import { Button } from "@ux/Button";
-import { H1, H2, H3, Text } from "@ux/Typography";
+import { H1 } from "@ux/Typography";
 
-import { KeyboardKey } from "./KeyboardKey";
+import { Configuration } from "./Configuration";
+import { EditKey } from "./EditKey";
+import { Layer } from "./Layer";
 
 export function App() {
   const [devices, setDevices] = useState<HIDDevice[]>([]);
@@ -31,14 +33,8 @@ export function App() {
     () => (selectedDevice >= 0 ? devices[selectedDevice] : undefined),
     [devices, selectedDevice]
   );
-  const {
-    name,
-    readDeviceType,
-    keyBindings,
-    readConfiguration,
-    keyboardDeviceType,
-    busy,
-  } = useKeyboardDevice(keyboardDevice);
+  const { keyBindings, readConfiguration, keyboardDeviceType, busy } =
+    useKeyboardDevice(keyboardDevice);
 
   useEffect(() => {
     if (currentDevice === undefined) {
@@ -135,25 +131,15 @@ export function App() {
     return layouts;
   }, [keyboardDeviceType.buttons]);
 
-  const selectedLayoutIndex = useMemo(
-    () =>
-      layouts.findIndex(
-        layout =>
-          layout.rows === selectedLayout.rows &&
-          layout.columns === selectedLayout.columns
-      ),
-    [layouts, selectedLayout]
-  );
-
   const [selectedBinding, setSelectedBinding] = useState<
-    Omit<KeyBinding, "expansion">
+    Omit<KeyBinding, "expansion" | "origin">
   >({
     key: -1,
     layer: -1,
   });
 
   const selectBinding = useCallback(
-    ({ key, layer }: Omit<KeyBinding, "expansion">) => {
+    ({ key, layer }: Omit<KeyBinding, "expansion" | "origin">) => {
       setSelectedBinding(prev => {
         if (keysAreEqual(prev.key, key) && prev.layer === layer) {
           return prev;
@@ -164,229 +150,90 @@ export function App() {
     []
   );
 
+  const currentBinding = React.useMemo(() => {
+    if (selectedBinding.key === -1 || selectedBinding.layer === -1) {
+      return;
+    }
+
+    const layer = bindingsByLayer[selectedBinding.layer] ?? [];
+
+    return layer.find(binding =>
+      keysAreEqual(binding.key, selectedBinding.key)
+    );
+  }, [bindingsByLayer, selectedBinding]);
+
   return (
     <KeyboardLayoutProvider>
-      <div className="flex flex-col gap-2">
-        <H1 className="m-4">ch57x Keyboard</H1>
-        <div className="flex w-fit flex-col gap-2 rounded-xl border border-neutral-500 p-4">
-          <div className="flex flex-row justify-start gap-2">
-            <Button
-              variant={devices.length === 0 ? "primary" : "default"}
-              onClick={() => scan(false)}
-            >
-              <Text size="lg" strong>
-                Connect
-              </Text>
-            </Button>
-            <Button onClick={() => scan(true)}>
-              <Text size="lg" strong>
-                Find
-              </Text>
-            </Button>
-            <Button
-              variant={
-                currentDevice &&
-                keyboardDeviceType.buttons === 0 &&
-                keyboardDeviceType.encoders === 0
-                  ? "primary"
-                  : "default"
-              }
-              disabled={currentDevice === undefined || busy}
-              onClick={readDeviceType}
-            >
-              <Text size="lg" strong>
-                Get device type
-              </Text>
-            </Button>
-            <Button
-              {...(currentDevice === undefined ||
-              busy ||
-              (keyboardDeviceType.buttons === 0 &&
-                keyboardDeviceType.encoders === 0)
-                ? {
-                    disabled: true,
-                    variant: "default",
-                  }
-                : {
-                    disabled: false,
-                    variant: "primary",
-                  })}
-              onClick={readConfiguration}
-            >
-              <Text size="lg" strong>
-                Read configuration
-              </Text>
-            </Button>
-          </div>
-          <div className="flex flex-row items-center gap-2">
-            <Text size="lg" strong>
-              Keyboards
-            </Text>
-            <select
-              className="w-64 rounded-lg border border-neutral-200 px-2 py-1.5 text-neutral-600 shadow-xs hover:border-neutral-400 hover:bg-neutral-100 hover:text-neutral-800 focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 focus:outline-none"
-              value={selectedDevice}
-              onChange={event => {
-                setSelectedDevice(Number(event.target.value));
-              }}
-            >
-              <option value={-1}>None</option>
-              {devices.map((device, i) => (
-                <option value={i} key={i}>
-                  0x{device.productId.toString(16)}—{device.productName}
-                </option>
-              ))}
-            </select>
-          </div>
-          <Text size="lg" strong>
-            {name}
-          </Text>
-          <Text size="lg">Buttons: {keyboardDeviceType.buttons}</Text>
-          <Text size="lg">Encoders: {keyboardDeviceType.encoders}</Text>
-          <div className="flex flex-row items-center gap-2">
-            <Text size="lg" strong>
-              Layout:
-            </Text>
-            <select
-              className="w-20 rounded-lg border border-neutral-200 px-2 py-1.5 text-neutral-600 shadow-xs hover:border-neutral-400 hover:bg-neutral-100 hover:text-neutral-800 focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 focus:outline-none"
-              value={selectedLayoutIndex}
-              onChange={event => {
-                const layout = layouts[Number(event.target.value)];
-                if (layout === undefined) {
-                  return;
-                }
-                setSelectedLayout(prev => {
-                  if (
-                    prev.rows === layout.rows &&
-                    prev.columns === layout.columns
-                  ) {
-                    return prev;
-                  }
-                  return { ...layout };
-                });
-              }}
-            >
-              {layouts.map(({ rows, columns }, i) => (
-                <option value={i} key={i}>
-                  {columns}×{rows}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="flex w-fit flex-col gap-2 rounded-xl border border-neutral-500 p-4">
-          <H2>Layers</H2>
-          {bindingsByLayer.map((bindings, layer) => (
-            <div key={layer}>
-              <>
-                {layer !== 0 && <hr className="border-neutral-300" />}
-                <H3>Layer {layer + 1}</H3>
-                <Text>{bindings.length} bindings</Text>
-                <div className="flex flex-row gap-8">
-                  <div
-                    className="grid gap-2"
-                    style={{
-                      gridTemplateColumns: `repeat(${selectedLayout.columns}, 8rem)`,
-                    }}
-                  >
-                    {Array(keyboardDeviceType.buttons)
-                      .fill(null)
-                      .map((_, i) => {
-                        const binding = bindings.find(
-                          binding => binding.key === i
-                        );
-                        return (
-                          <KeyboardKey
-                            as="button"
-                            key={i}
-                            className="size-32"
-                            macro={binding?.expansion}
-                            onClick={() =>
-                              selectBinding({ key: i, layer: layer })
-                            }
-                            selected={
-                              selectedBinding.layer === layer &&
-                              keysAreEqual(selectedBinding.key, i)
-                            }
-                          />
-                        );
-                      })}
+      <div className="flex min-h-screen flex-row gap-2 bg-neutral-100">
+        <Configuration
+          devices={devices}
+          selectedDevice={devices[selectedDevice]}
+          onSelectDevice={device =>
+            setSelectedDevice(device ? devices.indexOf(device) : -1)
+          }
+          onAddDevice={() => scan(true)}
+          layouts={layouts}
+          selectedLayout={selectedLayout}
+          onSelectLayout={update => setSelectedLayout(update)}
+          keyboardDeviceType={keyboardDeviceType}
+          canReadConfiguration={currentDevice !== undefined && !busy}
+          onReadConfiguration={readConfiguration}
+        />
+        <div className="flex flex-1 flex-col items-center">
+          <div className="flex flex-col gap-2">
+            <H1 className="m-4">ch57x Keyboard Programmer</H1>
+            <TabGroup className="flex flex-row gap-2" defaultIndex={0} vertical>
+              <TabList className="flex flex-col gap-1">
+                {({ selectedIndex }) => {
+                  return (
+                    <>
+                      {bindingsByLayer.map((_, layer) => (
+                        <Tab
+                          key={layer}
+                          className={twJoin(
+                            "rounded-md border border-neutral-300 px-3 py-1 hover:border-neutral-500",
+                            selectedIndex === layer
+                              ? "bg-indigo-100"
+                              : "bg-white"
+                          )}
+                        >
+                          Layer {layer + 1}
+                        </Tab>
+                      ))}
+                    </>
+                  );
+                }}
+              </TabList>
+              <div className="flex flex-col gap-4">
+                <TabPanels>
+                  {bindingsByLayer.map((bindings, layer) => (
+                    <TabPanel
+                      key={layer}
+                      className="rounded-lg border border-transparent bg-white p-4 shadow-xl"
+                    >
+                      <Layer
+                        layer={layer}
+                        keyBindings={bindings}
+                        keyboardDeviceType={keyboardDeviceType}
+                        selectedBinding={selectedBinding}
+                        onSelectBinding={selectBinding}
+                        keyLayout={selectedLayout}
+                      />
+                    </TabPanel>
+                  ))}
+                </TabPanels>
+                {bindingsByLayer.length > 0 && (
+                  <div className="rounded-lg border border-transparent bg-white p-4 shadow-xl">
+                    <EditKey
+                      initialBinding={currentBinding}
+                      updatedMacro={undefined}
+                      onChange={() => {}}
+                    />
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {}
-                    <RotateCcw className="justify-self-center text-neutral-400" />
-                    <MousePointerClick className="justify-self-center text-neutral-400" />
-                    <RotateCw className="justify-self-center text-neutral-400" />
-                    {Array(keyboardDeviceType.encoders)
-                      .fill(null)
-                      .flatMap((_, i) => {
-                        const ccw = bindings.find(
-                          ({ key }) =>
-                            Array.isArray(key) &&
-                            key[0] === i &&
-                            key[1] === "ccw"
-                        );
-                        const press = bindings.find(
-                          ({ key }) =>
-                            Array.isArray(key) &&
-                            key[0] === i &&
-                            key[1] === "press"
-                        );
-                        const cw = bindings.find(
-                          ({ key }) =>
-                            Array.isArray(key) &&
-                            key[0] === i &&
-                            key[1] === "cw"
-                        );
-                        return [
-                          <KeyboardKey
-                            as="button"
-                            key={`${i}.ccw`}
-                            className="size-32"
-                            variant="encoder-ccw"
-                            macro={ccw?.expansion}
-                            onClick={() =>
-                              selectBinding({ key: [i, "ccw"], layer: layer })
-                            }
-                            selected={
-                              selectedBinding.layer === layer &&
-                              keysAreEqual(selectedBinding.key, [i, "ccw"])
-                            }
-                          />,
-                          <KeyboardKey
-                            as="button"
-                            key={`${i}.press`}
-                            className="size-32"
-                            variant="encoder"
-                            macro={press?.expansion}
-                            onClick={() =>
-                              selectBinding({ key: [i, "press"], layer: layer })
-                            }
-                            selected={
-                              selectedBinding.layer === layer &&
-                              keysAreEqual(selectedBinding.key, [i, "press"])
-                            }
-                          />,
-                          <KeyboardKey
-                            as="button"
-                            key={`${i}.cw`}
-                            className="size-32"
-                            variant="encoder-cw"
-                            macro={cw?.expansion}
-                            onClick={() =>
-                              selectBinding({ key: [i, "cw"], layer: layer })
-                            }
-                            selected={
-                              selectedBinding.layer === layer &&
-                              keysAreEqual(selectedBinding.key, [i, "cw"])
-                            }
-                          />,
-                        ];
-                      })}
-                  </div>
-                </div>
-              </>
-            </div>
-          ))}
+                )}
+              </div>
+            </TabGroup>
+          </div>
         </div>
       </div>
     </KeyboardLayoutProvider>
