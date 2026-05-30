@@ -1,4 +1,9 @@
-const VENDOR_ID = 0x1189;
+export const KNOWN_VENDOR_IDS = [0x1189] as const;
+export type VendorId = (typeof KNOWN_VENDOR_IDS)[number];
+
+export const KNOWN_PRODUCT_IDS: Record<VendorId, number[]> = {
+  0x1189: [0x8840, 0x8842, 0x8890],
+};
 
 export async function scanForKeyboard(force: boolean = false) {
   if (navigator.hid === undefined) {
@@ -29,10 +34,9 @@ export async function getOrRequestDevices(forceRequest: boolean) {
     }
   }
 
-  const filters = [0x8840, 0x8842, 0x8890].map(productId => ({
-    vendorId: VENDOR_ID,
-    productId,
-  }));
+  const filters = KNOWN_VENDOR_IDS.flatMap(vendorId =>
+    KNOWN_PRODUCT_IDS[vendorId].map(productId => ({ vendorId, productId }))
+  );
 
   return navigator.hid.requestDevice({ filters });
 }

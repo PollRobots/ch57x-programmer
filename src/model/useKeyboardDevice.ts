@@ -8,6 +8,7 @@ import {
   Keyboard,
   KeyboardDeviceType,
   keysAreEqual,
+  UNKNOWN_KEYBOARD_DEVICE,
 } from "./keyboard";
 
 export type KeyboardDevice = {
@@ -29,10 +30,9 @@ export function useKeyboardDevice({
   keyboard,
   device,
 }: KeyboardDevice): ActiveKeyboardDevice {
-  const [deviceType, setDeviceType] = useState<KeyboardDeviceType>({
-    buttons: 0,
-    encoders: 0,
-  });
+  const [deviceType, setDeviceType] = useState<KeyboardDeviceType>(
+    UNKNOWN_KEYBOARD_DEVICE
+  );
   const [pending, setPending] = useState(false);
   const [errors, setErrors] = useState<Error[]>([]);
   const pendingBindings = useRef<KeyBinding[]>([]);
@@ -88,6 +88,12 @@ export function useKeyboardDevice({
       }
       const newBindings = pendingBindings.current;
       pendingBindings.current = [];
+      const maxLayer =
+        newBindings.reduce(
+          (accumulator, { layer }) => Math.max(accumulator, layer),
+          0
+        ) + 1;
+
       setKeyBindings(bindings => {
         const update = [...bindings];
 
@@ -104,6 +110,11 @@ export function useKeyboardDevice({
 
         return update;
       });
+      setDeviceType(deviceType =>
+        deviceType.layers >= maxLayer
+          ? deviceType
+          : { ...deviceType, layers: maxLayer }
+      );
     },
     100,
     { leading: false, trailing: true }
@@ -114,7 +125,7 @@ export function useKeyboardDevice({
       setDeviceType(prev =>
         prev.buttons === 0 && prev.encoders === 0
           ? prev
-          : { buttons: 0, encoders: 0 }
+          : UNKNOWN_KEYBOARD_DEVICE
       );
       setPending(false);
       setErrors(prev => (prev.length === 0 ? prev : []));
@@ -138,6 +149,7 @@ export function useKeyboardDevice({
           if (deviceType !== undefined) {
             setDeviceType(prev => {
               if (
+                prev.family === deviceType.family &&
                 prev.buttons === deviceType.buttons &&
                 prev.encoders === deviceType.encoders
               ) {
@@ -156,6 +168,8 @@ export function useKeyboardDevice({
             console.warn("Unable to parse config packet", array.slice(0, 16));
           }
           break;
+        default:
+          console.warn("Unknown packet", array);
       }
     };
 
@@ -185,6 +199,7 @@ export function useKeyboardDevice({
       .sendReport(3, makeBuffer(keyboard.readConfig(0)))
       .then(() => device.sendReport(3, makeBuffer(keyboard.readConfig(1))))
       .then(() => device.sendReport(3, makeBuffer(keyboard.readConfig(2))))
+      .then(() => device.sendReport(3, makeBuffer(keyboard.readConfig(3))))
       .catch(error => setErrors(prev => [...prev, error]))
       .finally(() => setPending(false));
   }, [keyboard, device, pending]);

@@ -6,6 +6,7 @@ import {
   Key,
   KeyBinding,
   Keyboard,
+  KeyboardDeviceType,
   KeyChord,
   macroKind,
   macroKindFromValue,
@@ -14,6 +15,7 @@ import {
   modifiersValue,
   mouseButtonsValue,
   mouseModifierValue,
+  UNKNOWN_KEYBOARD_DEVICE,
 } from "./keyboard";
 
 const collator = new Intl.Collator("en-US", {
@@ -141,29 +143,9 @@ function parseLedArgs(value: string): LedArgs | undefined {
 
 const MAX_NUMBER_OF_BUTTONS = 15;
 
-// prettier-ignore
-const READ_DEVICE_TYPE_BUFFER = [
-  0xfb, 0xfb, 0xfb, 0x02, 0x06, 0x2c, 0xd0, 0x80,
-  0x00, 0xdc, 0xcf, 0x80, 0x00, 0xcc, 0xd2, 0x21,
-  0x01, 0xe0, 0xcf, 0x80, 0x00, 0x2c, 0xd0, 0x80,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0xd0, 0x0d, 0x48,
-  0x00, 0xfc, 0xcf, 0x80, 0x00, 0xc0, 0x61, 0xbc,
-  0x06, 0x38, 0xd0, 0x80, 0x00, 0x70, 0xf5, 0x1e,
-  0x62, 0x98, 0xda, 0x11, 0x62, 0x0c, 0x80, 0x00,
-  0x00, 0x48, 0x09, 0x00, 0x06, 0xff, 0xff, 0xff,
-];
+const READ_DEVICE_TYPE_BUFFER = [0xfb, 0xfb, 0xfb]; // [0xfb, 0xfb, 0xfb];
 
-// prettier-ignore
-const READ_CONFIG_BUFFER = [
-  0xfa, 0x00, 0x00, 0x00, 0x06, 0x00, 0xcc, 0x80,
-  0x00, 0xc0, 0xcc, 0x80, 0x00, 0x7c, 0xf2, 0x02,
-  0x69, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x00, 0x14,
-  0x06, 0xc0, 0xcc, 0x80, 0x00, 0x49, 0x01, 0x00,
-  0x00, 0x06, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0xb0, 0xcc, 0x80, 0x00, 0x40, 0xcd, 0x80,
-  0x00, 0x88, 0x05, 0x00, 0x06, 0xc0, 0x0a, 0x10,
-  0x06, 0xe0, 0xcc, 0x80, 0x00, 0xc7, 0xb6, 0x48,
-];
+const READ_CONFIG_BUFFER = [0xfa, 0x00, 0x00, 0x00];
 
 const READ_CONFIG_BUFFER_OFFSETS = {
   buttons: 1,
@@ -171,17 +153,17 @@ const READ_CONFIG_BUFFER_OFFSETS = {
   layers: 3,
 };
 
-export function makeKeyboard884(buttons: number, knobs: number): Keyboard {
-  const deviceConfig: {
-    buttons: number;
-    encoders: number;
-  } = { buttons, encoders: knobs };
+export function makeKeyboard884(): Keyboard {
+  const keyboardDeviceType: KeyboardDeviceType = {
+    ...UNKNOWN_KEYBOARD_DEVICE,
+    family: "884x",
+  };
 
   const keyId = (key: Key): number => {
     if (typeof key === "number") {
       if (
         key >= MAX_NUMBER_OF_BUTTONS ||
-        (key >= 12 && deviceConfig.encoders === 4)
+        (key >= 12 && keyboardDeviceType.encoders === 4)
       ) {
         throw new Error("Invalid key index");
       }
@@ -192,7 +174,7 @@ export function makeKeyboard884(buttons: number, knobs: number): Keyboard {
     if (encoder >= 3) {
       throw new Error("Invalid knob index");
     }
-    if (encoder === 3 && deviceConfig.buttons <= 12) {
+    if (encoder === 3 && keyboardDeviceType.buttons <= 12) {
       return 13 + encoderActionValue(action);
     }
     return MAX_NUMBER_OF_BUTTONS + 1 + 3 * encoder + encoderActionValue(action);
@@ -203,7 +185,7 @@ export function makeKeyboard884(buttons: number, knobs: number): Keyboard {
       return;
     }
     if (id <= MAX_NUMBER_OF_BUTTONS) {
-      if (deviceConfig.encoders === 4 && id >= 13) {
+      if (keyboardDeviceType.encoders === 4 && id >= 13) {
         // special case for 4th encoder, for some reason it is encoded as if it was buttons 13-15
         const encoderAction = encoderActionFromValue(id - 13);
         if (encoderAction) {
@@ -231,17 +213,11 @@ export function makeKeyboard884(buttons: number, knobs: number): Keyboard {
 
       const messages: number[][] = [];
 
+      // prettier-ignore
       const message = [
-        0x03,
-        0xfe,
-        keyId(key),
-        layer + 1,
-        macroKind(expansion),
-        0,
-        0,
-        0,
-        0,
-        0,
+        0x03, 0xfe, keyId(key), layer + 1,
+        macroKind(expansion), 0x00, 0x00, 0x00,
+        0x00, 0x00,
       ];
 
       switch (expansion.type) {
@@ -343,19 +319,11 @@ export function makeKeyboard884(buttons: number, knobs: number): Keyboard {
       const code = ledModeCode(ledArgs.mode);
 
       return [
+        // prettier-ignore
         [
-          0x03,
-          0xfe,
-          0xb0,
-          ledArgs.layer + 1,
-          0x08,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0x01,
-          0x00,
+          0x03, 0xfe, 0xb0, ledArgs.layer + 1,
+          0x08, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x01, 0x00,
           code,
         ],
         [0x03, 0xfd, 0xf0, 0xff],
@@ -365,8 +333,8 @@ export function makeKeyboard884(buttons: number, knobs: number): Keyboard {
     readConfig: layer => {
       const packet = [...READ_CONFIG_BUFFER];
 
-      packet[READ_CONFIG_BUFFER_OFFSETS.buttons] = deviceConfig.buttons;
-      packet[READ_CONFIG_BUFFER_OFFSETS.encoders] = deviceConfig.encoders;
+      packet[READ_CONFIG_BUFFER_OFFSETS.buttons] = keyboardDeviceType.buttons;
+      packet[READ_CONFIG_BUFFER_OFFSETS.encoders] = keyboardDeviceType.encoders;
       packet[READ_CONFIG_BUFFER_OFFSETS.layers] = layer + 1;
 
       return packet;
@@ -385,9 +353,9 @@ export function makeKeyboard884(buttons: number, knobs: number): Keyboard {
         return;
       }
 
-      deviceConfig.buttons = data[1] ?? deviceConfig.buttons;
-      deviceConfig.encoders = data[2] ?? deviceConfig.encoders;
-      return deviceConfig;
+      keyboardDeviceType.buttons = data[1] ?? keyboardDeviceType.buttons;
+      keyboardDeviceType.encoders = data[2] ?? keyboardDeviceType.encoders;
+      return keyboardDeviceType;
     },
     parseConfigPacket: (data: Uint8Array): KeyBinding | undefined => {
       if (READ_CONFIG_BUFFER[0] !== data[0]) {
@@ -396,6 +364,10 @@ export function makeKeyboard884(buttons: number, knobs: number): Keyboard {
       const key = keyFromId(data[1]!);
       const layer = data[2]! - 1;
       const macroKind = macroKindFromValue(data[3]!);
+
+      if (layer + 1 > keyboardDeviceType.layers) {
+        keyboardDeviceType.layers = layer + 1;
+      }
 
       if (key === undefined || layer < 0 || macroKind === undefined) {
         return;

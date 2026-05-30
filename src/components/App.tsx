@@ -12,11 +12,12 @@ import { makeKeyboard884 } from "@model/keyboard_884x";
 import { scanForKeyboard } from "@model/usb";
 import { KeyboardDevice, useKeyboardDevice } from "@model/useKeyboardDevice";
 import { KeyboardLayoutProvider } from "@model/useKeyboardLayout";
-import { H1 } from "@ux/Typography";
+import { H1, H2, Text } from "@ux/Typography";
 
 import { Configuration } from "./Configuration";
 import { EditKey } from "./EditKey";
 import { Layer } from "./Layer";
+import { KeyboardProfile, KeyLayout } from "@model/keyboard_profile";
 
 export function App() {
   const [devices, setDevices] = useState<HIDDevice[]>([]);
@@ -24,17 +25,58 @@ export function App() {
   const [keyboardDevice, setKeyboardDevice] = useState<KeyboardDevice>({
     keyboard: NoopKeyboard,
   });
-  const [selectedLayout, setSelectedLayout] = useState<{
-    rows: number;
-    columns: number;
-  }>({ rows: 0, columns: 0 });
+  const [selectedLayout, setSelectedLayout] = useState<KeyLayout>({
+    rows: 0,
+    columns: 0,
+  });
+  const [profiles, setProfiles] = useState<KeyboardProfile[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<
+    KeyboardProfile | undefined
+  >();
 
   const currentDevice = useMemo(
     () => (selectedDevice >= 0 ? devices[selectedDevice] : undefined),
     [devices, selectedDevice]
   );
-  const { keyBindings, readConfiguration, keyboardDeviceType, busy } =
+  const { keyBindings, readConfiguration, keyboardDeviceType, busy, errors } =
     useKeyboardDevice(keyboardDevice);
+
+  const bindingsByLayer = React.useMemo(() => {
+    const layers: KeyBinding[][] = Array(keyboardDeviceType.layers);
+
+    for (const binding of keyBindings) {
+      while (binding.layer >= layers.length) {
+        layers.push([]);
+      }
+      layers[binding.layer]!.push(binding);
+    }
+    for (const layer of layers) {
+      layer.sort((a, b) => keysCompare(a.key, b.key));
+    }
+    return layers;
+  }, [keyBindings, keyboardDeviceType.layers]);
+
+  const addProfile = useCallback(
+    (name: string) => {
+      if (!currentDevice) {
+        return;
+      }
+
+      const profile: KeyboardProfile = {
+        name,
+        vendorId: 4489,
+        productId: currentDevice?.productId,
+        keyboardDeviceType: {
+          ...keyboardDeviceType,
+        },
+        layout: { ...selectedLayout },
+        bindingsByLayer: JSON.parse(JSON.stringify(bindingsByLayer)),
+      };
+
+      setProfiles(prev => [...prev, profile]);
+    },
+    [currentDevice, selectedLayout, keyboardDeviceType, bindingsByLayer]
+  );
 
   useEffect(() => {
     if (currentDevice === undefined) {
@@ -54,7 +96,7 @@ export function App() {
         .then(() => {
           if ((workingDevice.productId & 0x884f) === workingDevice.productId) {
             setKeyboardDevice({
-              keyboard: makeKeyboard884(0, 0),
+              keyboard: makeKeyboard884(),
               device: workingDevice,
             });
           }
@@ -67,21 +109,6 @@ export function App() {
       void workingDevice.close();
     };
   }, [currentDevice]);
-
-  const bindingsByLayer = React.useMemo(() => {
-    const layers: KeyBinding[][] = [];
-
-    for (const binding of keyBindings) {
-      while (binding.layer >= layers.length) {
-        layers.push([]);
-      }
-      layers[binding.layer]!.push(binding);
-    }
-    for (const layer of layers) {
-      layer.sort((a, b) => keysCompare(a.key, b.key));
-    }
-    return layers;
-  }, [keyBindings]);
 
   const scan = useCallback(
     (force: boolean) => {
@@ -178,8 +205,13 @@ export function App() {
           keyboardDeviceType={keyboardDeviceType}
           canReadConfiguration={currentDevice !== undefined && !busy}
           onReadConfiguration={readConfiguration}
+          profiles={profiles}
+          selectedProfile={selectedProfile}
+          onSelectProfile={setSelectedProfile}
+          onChangeProfiles={setProfiles}
+          onAddProfile={addProfile}
         />
-        <div className="flex flex-1 flex-col items-center">
+        <div className="flex flex-1 flex-col items-center gap-4">
           <div className="flex flex-col gap-2">
             <H1 className="m-4">ch57x Keyboard Programmer</H1>
             <TabGroup className="flex flex-row gap-2" defaultIndex={0} vertical>
@@ -234,6 +266,14 @@ export function App() {
               </div>
             </TabGroup>
           </div>
+          {errors.length > 0 && (
+            <div className="flex flex-col gap-2 rounded-xl bg-red-100 p-4 shadow-xl">
+              <H2 className="text-red-700">Errors</H2>
+              {errors.map((err, i) => (
+                <Text key={i}>{err.toString()}</Text>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </KeyboardLayoutProvider>

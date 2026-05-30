@@ -25,8 +25,19 @@ export const NoopKeyboard: Keyboard = {
 export type KeyboardPacketType = "device" | "config";
 
 export type KeyboardDeviceType = {
+  family: KeyboardFamily;
   buttons: number;
   encoders: number;
+  layers: number;
+};
+
+export type KeyboardFamily = "884x" | "%other";
+
+export const UNKNOWN_KEYBOARD_DEVICE: KeyboardDeviceType = {
+  family: "%other",
+  buttons: 0,
+  encoders: 0,
+  layers: 0,
 };
 
 export type KeyBinding = {
