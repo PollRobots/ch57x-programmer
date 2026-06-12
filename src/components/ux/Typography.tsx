@@ -1,90 +1,70 @@
+import { cva, type VariantProps } from "class-variance-authority";
 import React from "react";
-import { twMerge } from "tailwind-merge";
 
+const typography = cva("text-default", {
+  variants: {
+    size: {
+      xs: "text-xs",
+      sm: "text-sm",
+      md: "text-base",
+      lg: "text-lg",
+      xl: "text-xl",
+      "2xl": "text-2xl",
+      "3xl": "text-3xl",
+      "4xl": "text-4xl",
+      "5xl": "text-5xl",
+      "6xl": "text-6xl",
+      "7xl": "text-7xl",
+      "8xl": "text-8xl",
+      "9xl": "text-9xl",
+    },
+    strong: {
+      true: "font-semibold",
+      false: null,
+    },
+  },
+});
 
-
-
-
-export type TypographyProps = {
-  size?: FontSize;
-  strong?: boolean;
-} & React.HTMLAttributes<HTMLSpanElement>;
+export type TypographyProps = VariantProps<typeof typography> &
+  React.HTMLAttributes<HTMLSpanElement>;
 
 type TypographyElement = "h1" | "h2" | "h3" | "h4" | "text";
-export type FontSize =
-  | "xs"
-  | "sm"
-  | "md"
-  | "lg"
-  | "xl"
-  | "2xl"
-  | "3xl"
-  | "4xl"
-  | "5xl"
-  | "6xl"
-  | "7xl"
-  | "8xl"
-  | "9xl";
-
-const HEADING_CLASS_NAME = "text-default";
 
 const ELEMENT_DEFINITION: Record<
   TypographyElement,
   {
-    baseClassName?: string;
-    fontSize: FontSize;
+    fontSize: Exclude<TypographyProps["size"], null | undefined>;
     displayName: string;
     Component: Exclude<TypographyElement, "text"> | "span";
   }
 > = {
   h1: {
     displayName: "H1",
-    baseClassName: HEADING_CLASS_NAME,
     fontSize: "4xl",
     Component: "h1",
   },
   h2: {
     displayName: "H2",
-    baseClassName: HEADING_CLASS_NAME,
     fontSize: "3xl",
     Component: "h2",
   },
   h3: {
     displayName: "H3",
-    baseClassName: HEADING_CLASS_NAME,
     fontSize: "2xl",
     Component: "h3",
   },
   h4: {
     displayName: "H4",
-    baseClassName: HEADING_CLASS_NAME,
     fontSize: "xl",
     Component: "h4",
   },
   text: { displayName: "Text", fontSize: "md", Component: "span" },
 };
 
-const FONT_SIZE: Record<FontSize, string> = {
-  xs: "text-xs",
-  sm: "text-sm",
-  md: "text-base",
-  lg: "text-lg",
-  xl: "text-xl",
-  "2xl": "text-2xl",
-  "3xl": "text-3xl",
-  "4xl": "text-4xl",
-  "5xl": "text-5xl",
-  "6xl": "text-6xl",
-  "7xl": "text-7xl",
-  "8xl": "text-8xl",
-  "9xl": "text-9xl",
-};
-
 function makeTypographyComponent(
   as: TypographyElement
 ): React.FC<React.PropsWithChildren<TypographyProps>> {
-  const { Component, baseClassName, fontSize, displayName } =
-    ELEMENT_DEFINITION[as];
+  const { Component, fontSize, displayName } = ELEMENT_DEFINITION[as];
 
   const typographyComponent = ({
     size = fontSize,
@@ -93,14 +73,8 @@ function makeTypographyComponent(
     children,
     ...other
   }: React.PropsWithChildren<TypographyProps>) => {
-    const concreteClassName = twMerge(
-      baseClassName,
-      FONT_SIZE[size],
-      strong && "font-semibold",
-      className
-    );
     return (
-      <Component className={concreteClassName} {...other}>
+      <Component className={typography({ size, strong, className })} {...other}>
         {children}
       </Component>
     );

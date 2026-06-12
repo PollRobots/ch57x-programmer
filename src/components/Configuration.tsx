@@ -59,7 +59,7 @@ export function Configuration(props: ConfigurationProps) {
           Keyboard configuration
         </H3>
       }
-      className="grid border-r-1 border-r-neutral-400 bg-neutral-200"
+      className="border-r border-neutral-400 bg-neutral-200"
       openContent={<OpenConfiguration {...props} />}
       collapseDirection="left"
       aria-label="Keyboard configuration"

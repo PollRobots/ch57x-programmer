@@ -156,7 +156,7 @@ function KeyboardEditor({ keyChords }: KeyboardEditorProps) {
         )}
       </RadioGroup>
       <Text strong>Selected key</Text>
-      {selectedChord && }
+      {JSON.stringify(selectedChord)}
     </div>
   );
 }
