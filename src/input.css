@@ -1,3 +1,15 @@
+@import "@fontsource-variable/inter";
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Inter Variable", ui-sans-seriv, system-ui, sans-serif;
+
+    --color-inverse: oklch(1 0.02 240);
+    --color-default: oklch(0.20 0.02 240);
+    --color-secondary: oklch(0.45 0.03 240);
+    --color-tertiary: oklch(0.60 0.02 240);
+
+}

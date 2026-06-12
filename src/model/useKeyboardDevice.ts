@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 
+
+
 import { WELL_KNOWN_CODES } from "./key_codes";
-import {
-  EncoderAction,
-  KeyBinding,
-  Keyboard,
-  KeyboardDeviceType,
-  keysAreEqual,
-  UNKNOWN_KEYBOARD_DEVICE,
-} from "./keyboard";
+import { EncoderAction, KeyBinding, Keyboard, KeyboardDeviceType, keysAreEqual, UNKNOWN_KEYBOARD_DEVICE } from "./keyboard";
+
 
 export type KeyboardDevice = {
   keyboard: Keyboard;
@@ -50,9 +46,7 @@ export function useKeyboardDevice({
             options: {
               delay: 0,
             },
-            keyChords: [
-              { modifiers: new Set(), code: WELL_KNOWN_CODES[button]! },
-            ],
+            keyChords: [{ modifiers: [], code: WELL_KNOWN_CODES[button]! }],
           },
           origin: "placeholder",
         });
@@ -67,7 +61,7 @@ export function useKeyboardDevice({
               options: { delay: 0 },
               keyChords: [
                 {
-                  modifiers: new Set(),
+                  modifiers: [],
                   code: WELL_KNOWN_CODES[deviceType.buttons + encoder * 3 + i]!,
                 },
               ],

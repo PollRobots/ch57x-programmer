@@ -1,6 +1,14 @@
-import React from "react";
+import React, { useMemo } from "react";
 
-import { KeyChord, Macro, modifiersToString } from "@model/keyboard";
+import {
+  isKeyboardEvent,
+  isMediaEvent,
+  isMouseEvent,
+  KeyChord,
+  Macro,
+  modifiersToCanonical,
+  modifiersToString,
+} from "@model/keyboard";
 import { useKeyboardLayout } from "@model/useKeyboardLayout";
 import { Text } from "@ux/Typography";
 
@@ -11,11 +19,11 @@ export type DisplayKeyBindingProps = {
 export function DisplayKeyBinding({ macro }: DisplayKeyBindingProps) {
   return (
     <>
-      {macro.type == "Keyboard" && (
+      {isKeyboardEvent(macro) && (
         <DisplayKeyboardMacro keyChords={macro.keyChords} />
       )}
-      {macro.type == "Mouse" && <DisplayMouseMacro />}
-      {macro.type == "Media" && <DisplayMediaMacro />}
+      {isMouseEvent(macro) && <DisplayMouseMacro />}
+      {isMediaEvent(macro) && <DisplayMediaMacro />}
     </>
   );
 }
@@ -25,27 +33,35 @@ type DisplayKeyboardMacroProps = {
 };
 
 function DisplayKeyboardMacro({ keyChords }: DisplayKeyboardMacroProps) {
+  const first = keyChords[0];
+
   return (
-    <Text>
-      {keyChords.flatMap((keyChord, i) =>
-        i > 0
-          ? [
-              <span key={`comma${i}`}>, </span>,
-              <DisplayKeyChord key={i} {...keyChord} />,
-            ]
-          : [<DisplayKeyChord key={i} {...keyChord} />]
+    <div className="flex flex-row place-items-start">
+      {first && <DisplayKeyChord {...first} />}
+      {keyChords.length > 1 && (
+        <Text
+          size="xs"
+          className="bg-tertiary text-inverse -mt-1 -ml-1 rounded-full p-0.5"
+        >
+          {" "}
+          +{keyChords.length - 1}
+        </Text>
       )}
-    </Text>
+    </div>
   );
 }
 
 export function DisplayKeyChord({ modifiers, code }: KeyChord) {
   const { getCodeName } = useKeyboardLayout();
-  const modifierString = React.useMemo(
+  const modifierString = useMemo(
     () => modifiersToString(modifiers),
     [modifiers]
   );
-  const codeDisplay = React.useMemo(() => {
+  const modifierList = useMemo(
+    () => modifiersToCanonical(modifiers),
+    [modifiers]
+  );
+  const codeDisplay = useMemo(() => {
     if (code === undefined) {
       return null;
     }
@@ -69,10 +85,18 @@ export function DisplayKeyChord({ modifiers, code }: KeyChord) {
   return code === undefined ? (
     modifierString
   ) : (
-    <>
-      {modifierString && `${modifierString} + `}
-      {codeDisplay}
-    </>
+    <div className="flex flex-row gap-1">
+      {modifierList.length !== 0 && (
+        <div className="flex flex-col gap-0.5">
+          {modifierList.map((m, i) => (
+            <Text key={i} size="xs" strong>
+              {m}
+            </Text>
+          ))}
+        </div>
+      )}
+      <Text>{codeDisplay}</Text>
+    </div>
   );
 }
 

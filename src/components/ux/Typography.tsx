@@ -1,6 +1,10 @@
 import React from "react";
 import { twMerge } from "tailwind-merge";
 
+
+
+
+
 export type TypographyProps = {
   size?: FontSize;
   strong?: boolean;
@@ -22,7 +26,7 @@ export type FontSize =
   | "8xl"
   | "9xl";
 
-const HEADING_CLASS_NAME = "text-neutral-800";
+const HEADING_CLASS_NAME = "text-default";
 
 const ELEMENT_DEFINITION: Record<
   TypographyElement,

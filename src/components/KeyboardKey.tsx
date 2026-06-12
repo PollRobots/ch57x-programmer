@@ -2,10 +2,15 @@ import { Asterisk } from "lucide-react";
 import React from "react";
 import { twMerge } from "tailwind-merge";
 
+
+
 import { KeyBindingOrigin, Macro } from "@model/keyboard";
 import { Text } from "@ux/Typography";
 
+
+
 import { DisplayKeyBinding } from "./DisplayKeyBinding";
+
 
 export type KeyboardKeyProps = {
   as?: "div" | "button";
@@ -22,7 +27,7 @@ export type KeyboardKeyVariant =
   | "encoder";
 
 const COMMON_CLASS_NAME =
-  "grid text-neutral-500 hover:text-neutral-700 text-center border";
+  "grid text-secondary hover:text-default text-center border";
 
 const VARIANT_CLASS_NAME: Record<KeyboardKeyVariant, string> = {
   button:
@@ -76,8 +81,8 @@ export function KeyboardKey({
         </div>
       )}
       {origin === "placeholder" && (
-        <div className="col-start-1 row-start-1 self-start p-1">
-          <Text size="xs">Placholder</Text>
+        <div className="col-start-1 row-start-1 self-start justify-self-start p-1">
+          <Text size="xs">P</Text>
         </div>
       )}
     </Component>

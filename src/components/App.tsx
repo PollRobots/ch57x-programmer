@@ -1,23 +1,24 @@
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { twJoin } from "tailwind-merge";
+import { useEventListener } from "usehooks-ts";
 
-import {
-  KeyBinding,
-  keysAreEqual,
-  keysCompare,
-  NoopKeyboard,
-} from "@model/keyboard";
+
+
+import { KeyBinding, keysAreEqual, keysCompare, NoopKeyboard } from "@model/keyboard";
 import { makeKeyboard884 } from "@model/keyboard_884x";
+import { KeyboardProfile, KeyLayout, loadProfiles, saveProfiles } from "@model/keyboard_profile";
 import { scanForKeyboard } from "@model/usb";
 import { KeyboardDevice, useKeyboardDevice } from "@model/useKeyboardDevice";
 import { KeyboardLayoutProvider } from "@model/useKeyboardLayout";
 import { H1, H2, Text } from "@ux/Typography";
 
+
+
 import { Configuration } from "./Configuration";
 import { EditKey } from "./EditKey";
 import { Layer } from "./Layer";
-import { KeyboardProfile, KeyLayout } from "@model/keyboard_profile";
+
 
 export function App() {
   const [devices, setDevices] = useState<HIDDevice[]>([]);
@@ -29,7 +30,7 @@ export function App() {
     rows: 0,
     columns: 0,
   });
-  const [profiles, setProfiles] = useState<KeyboardProfile[]>([]);
+  const [profiles, setProfiles] = useState<KeyboardProfile[]>(loadProfiles());
   const [selectedProfile, setSelectedProfile] = useState<
     KeyboardProfile | undefined
   >();
@@ -42,7 +43,9 @@ export function App() {
     useKeyboardDevice(keyboardDevice);
 
   const bindingsByLayer = React.useMemo(() => {
-    const layers: KeyBinding[][] = Array(keyboardDeviceType.layers);
+    const layers: KeyBinding[][] = Array(keyboardDeviceType.layers)
+      .fill(null)
+      .map(() => []);
 
     for (const binding of keyBindings) {
       while (binding.layer >= layers.length) {
@@ -74,9 +77,19 @@ export function App() {
       };
 
       setProfiles(prev => [...prev, profile]);
+      setSelectedProfile(prev => prev ?? profile);
     },
     [currentDevice, selectedLayout, keyboardDeviceType, bindingsByLayer]
   );
+
+  const onVisibilityChange = useCallback(() => {
+    if (document.hidden) {
+      saveProfiles(profiles);
+    }
+  }, [profiles]);
+
+  const documentRef = useRef(document);
+  useEventListener("visibilitychange", onVisibilityChange, documentRef);
 
   useEffect(() => {
     if (currentDevice === undefined) {
@@ -189,6 +202,11 @@ export function App() {
     );
   }, [bindingsByLayer, selectedBinding]);
 
+  const selectProfile = useCallback((profile: KeyboardProfile) => {
+    setSelectedLayout({...profile.layout})
+    setSelectedProfile(profile);
+  }, []);
+
   return (
     <KeyboardLayoutProvider>
       <div className="flex min-h-screen flex-row gap-2 bg-neutral-100">
@@ -207,7 +225,7 @@ export function App() {
           onReadConfiguration={readConfiguration}
           profiles={profiles}
           selectedProfile={selectedProfile}
-          onSelectProfile={setSelectedProfile}
+          onSelectProfile={selectProfile}
           onChangeProfiles={setProfiles}
           onAddProfile={addProfile}
         />

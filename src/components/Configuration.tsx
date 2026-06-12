@@ -13,15 +13,16 @@ import {
 } from "@headlessui/react";
 import { Check, HardDriveUpload, Keyboard, Plus } from "lucide-react";
 import React, { useState } from "react";
+import { twJoin } from "tailwind-merge";
 
 import { KeyboardDeviceType } from "@model/keyboard";
+import { KeyboardProfile } from "@model/keyboard_profile";
 import { Button } from "@ux/Button";
 import { Expando } from "@ux/Expando";
 import { H3, Text } from "@ux/Typography";
 
 import { DisplayLayout } from "./DisplayLayout";
 import { LayoutIcon } from "./LayoutIcon";
-import { KeyboardProfile } from "@model/keyboard_profile";
 
 export type ConfigurationProps = {
   devices: HIDDevice[];
@@ -39,8 +40,8 @@ export type ConfigurationProps = {
 
   profiles: KeyboardProfile[];
   selectedProfile: KeyboardProfile | undefined;
-  onChangeProfiles: (udated: KeyboardProfile[]) => void;
-  onSelectProfile: (profile: KeyboardProfile | undefined) => void;
+  onChangeProfiles: (updated: KeyboardProfile[]) => void;
+  onSelectProfile: (profile: KeyboardProfile) => void;
   onAddProfile: (name: string) => void;
 };
 
@@ -82,6 +83,7 @@ function OpenConfiguration({
   profiles,
   onAddProfile,
 }: ConfigurationProps) {
+  const [currentProfile, setCurrentProfile] = useState(selectedProfile);
   const [showAddProfile, setShowAddProfile] = useState(false);
 
   return (
@@ -161,12 +163,12 @@ function OpenConfiguration({
         <Text strong>Download key-bindings</Text>
       </Button>
       <Text strong>Profiles:</Text>
-      <Listbox value={selectedProfile} onChange={onSelectProfile}>
+      <Listbox value={currentProfile} onChange={setCurrentProfile}>
         <ListboxButton className="flex w-64 max-w-64 items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-100 p-2 hover:border-neutral-500">
-          {selectedProfile ? (
-            <DisplayProfile {...selectedProfile} />
+          {currentProfile ? (
+            <DisplayProfile {...currentProfile} />
           ) : (
-            <Text className="text-neutral-500 italic">None</Text>
+            <Text className="text-secondary italic">None</Text>
           )}
         </ListboxButton>
         <ListboxOptions
@@ -174,21 +176,33 @@ function OpenConfiguration({
           className="flex flex-col gap-2 rounded-lg bg-white p-2 shadow-lg"
           aria-live="polite"
         >
-          {profiles.map((profile, index) => (
-            <ListboxOption
-              key={index}
-              value={profile}
-              className="group flex min-w-64 items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-50 p-2 hover:bg-neutral-100"
-            >
-              <Check className="invisible size-5 group-data-selected:visible" />
-              <DisplayProfile {...profile} />
-            </ListboxOption>
-          ))}
+          {profiles.map((profile, index) => {
+            // Ensure that we can only select profiles that match the current device.
+            const disabled =
+              selectedDevice === undefined ||
+              selectedDevice.productId !== profile.productId ||
+              selectedDevice.vendorId !== profile.vendorId;
+            return (
+              <ListboxOption
+                key={index}
+                value={profile}
+                disabled={disabled}
+                className={twJoin(
+                  "group flex min-w-64 items-center gap-2 rounded-lg border p-2",
+                  "border-neutral-300 bg-neutral-50 p-2 hover:bg-neutral-100",
+                  disabled && "pointer-events-none"
+                )}
+              >
+                <Check className="invisible size-5 group-data-selected:visible" />
+                <DisplayProfile {...profile} />
+              </ListboxOption>
+            );
+          })}
           <ListboxOption
             value={undefined}
             className="group flex min-w-64 items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-50 p-2 hover:bg-neutral-100"
           >
-            <Text className="text-neutral-500 italic">None</Text>
+            <Text className="text-secondary italic">None</Text>
           </ListboxOption>
 
           <Button
@@ -202,22 +216,38 @@ function OpenConfiguration({
         </ListboxOptions>
         <AddProfileDialog
           show={showAddProfile}
+          names={profiles.map(p => p.name)}
           onClose={() => setShowAddProfile(false)}
           onAddProfile={onAddProfile}
         />
       </Listbox>
+      <Button
+        variant="default"
+        disabled={
+          currentProfile === undefined || currentProfile === selectedProfile
+        }
+        onClick={() => {
+          if (currentProfile) {
+            onSelectProfile(currentProfile);
+          }
+        }}
+      >
+        Use this profile
+      </Button>
     </div>
   );
 }
 
 type AddProfileDialogProps = {
   show: boolean;
+  names: string[];
   onClose: () => void;
   onAddProfile: (name: string) => void;
 };
 
 function AddProfileDialog({
   show,
+  names,
   onClose,
   onAddProfile,
 }: AddProfileDialogProps) {
@@ -226,33 +256,34 @@ function AddProfileDialog({
   return (
     <Dialog open={show} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 flex w-screen place-items-start p-12">
-        <DialogPanel className="mt-[22rem] flex max-w-lg flex-col gap-4 rounded-xl border border-neutral-500 bg-white p-6 shadow-xl">
-          <DialogTitle>
-            <H3 strong>Add profile</H3>
+        <DialogPanel className="mt-88 flex max-w-lg flex-col gap-2 rounded-xl border border-neutral-500 bg-white p-6 shadow-xl">
+          <DialogTitle as={H3} strong>
+            Add profile
           </DialogTitle>
           <Description>This will add a new keyboard profile</Description>
-          <Field>
-            <Label>
-              <Text size="sm" strong>
-                Profile name
-              </Text>
-              <Description>
-                <Text size="sm" className="text-neutral-500">
-                  The name for the new profile. This can be edited later
-                </Text>
-              </Description>
-              <Input
-                className={
-                  "mt-3 block w-full rounded-lg border-none bg-black/5 px-3 py-1.5 text-sm/6 text-black " +
-                  "focus:not-data-focus:outline-none data-focus:outline-1 data-focus:-outline-offset-2 data-focus:outline-black/25"
-                }
-                name="profile_name"
-                type="text"
-                placeholder="Profile name…"
-                value={name}
-                onChange={event => setName(event.target.value)}
-              />
+          <Field className="flex flex-col">
+            <Label as={Text} size="sm" strong>
+              Profile name
             </Label>
+            <Description as={Text} size="sm" className="text-secondary">
+              The name for the new profile. This can be edited later
+            </Description>
+            <Input
+              className={
+                "mt-3 block w-full rounded-lg border-none bg-black/5 px-3 py-1.5 text-sm/6 text-black " +
+                "focus:not-data-focus:outline-none data-focus:outline-1 data-focus:-outline-offset-2 data-focus:outline-black/25"
+              }
+              name="profile_name"
+              type="text"
+              placeholder="Profile name…"
+              value={name}
+              onChange={event => setName(event.target.value)}
+            />
+            {names.includes(name) && (
+              <Text size="sm" className="text-red-500">
+                Each profile must have a unique name.
+              </Text>
+            )}
           </Field>
           <div className="flex gap-4">
             <Button className="ml-auto" onClick={onClose} variant="default">
@@ -264,7 +295,7 @@ function AddProfileDialog({
                 onAddProfile(name);
               }}
               variant="primary"
-              disabled={name.length === 0}
+              disabled={name.length === 0 || names.includes(name)}
             >
               Add
             </Button>

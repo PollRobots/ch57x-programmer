@@ -1,8 +1,18 @@
-import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import React from "react";
+import {
+  Radio,
+  RadioGroup,
+  Tab,
+  TabGroup,
+  TabList,
+  TabPanel,
+  TabPanels,
+} from "@headlessui/react";
+import { Plus } from "lucide-react";
+import React, { useState } from "react";
 import { twJoin } from "tailwind-merge";
 
 import { KeyBinding, KeyChord, Macro } from "@model/keyboard";
+import { Button } from "@ux/Button";
 import { H3, Text } from "@ux/Typography";
 
 import { DisplayKeyBinding, DisplayKeyChord } from "./DisplayKeyBinding";
@@ -108,22 +118,45 @@ type KeyboardEditorProps = {
 };
 
 function KeyboardEditor({ keyChords }: KeyboardEditorProps) {
+  const [selectedKey, setSelectedKey] = useState(0);
+  const selectedChord = keyChords[selectedKey];
+
   return (
-    <div className="p-2">
-      <div className="grid grid-cols-18">
+    <div className="flex flex-col gap-2 p-2">
+      <Text strong>Key sequence</Text>
+      <Text size="sm" className="text-secondary">
+        This is the current sequence bound to this key
+      </Text>
+      <RadioGroup
+        value={selectedKey}
+        onChange={setSelectedKey}
+        className="flex flex-row flex-wrap gap-1"
+      >
         {keyChords.map((keyChord, i) => (
-          <DisplayKeyChord key={i} {...keyChord} />
+          <Radio
+            value={i}
+            className={twJoin(
+              "flex min-h-16 min-w-16 place-items-center",
+              "text-secondary hover:text-default grid border p-1",
+              "place-items-center rounded-md border-neutral-200 hover:border-neutral-400",
+              "bg-linear-to-b from-neutral-50 via-neutral-100 to-neutral-200 hover:via-indigo-100"
+            )}
+          >
+            <DisplayKeyChord key={i} {...keyChord} />
+          </Radio>
         ))}
         {keyChords.length < 18 && (
-          <>
-            {Array(18 - keyChords.length)
-              .fill(null)
-              .map((_, i) => (
-                <div key={i + keyChords.length} />
-              ))}
-          </>
+          <Button
+            variant="invisible"
+            className="border-tertiary inline-flex min-h-16 min-w-16 flex-col items-center justify-center border border-dotted"
+          >
+            <Plus />
+            <Text size="sm">Add</Text>
+          </Button>
         )}
-      </div>
+      </RadioGroup>
+      <Text strong>Selected key</Text>
+      {selectedChord && }
     </div>
   );
 }

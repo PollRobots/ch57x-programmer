@@ -18,6 +18,13 @@ export const WELL_KNOWN_CODES = [
 
 export type WellKnownCode = (typeof WELL_KNOWN_CODES)[number];
 
+export function isWellKnownCode(value: unknown): value is WellKnownCode {
+  return (
+    typeof value === "string" &&
+    WELL_KNOWN_CODES.includes(value as WellKnownCode)
+  );
+}
+
 export function wellKnownCodeValue(code: WellKnownCode): number {
   return WELL_KNOWN_CODES.indexOf(code) + 0x04;
 }

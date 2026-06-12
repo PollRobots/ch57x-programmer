@@ -1,11 +1,16 @@
 import { MousePointerClick, RotateCcw, RotateCw } from "lucide-react";
 import React from "react";
 
+
+
 import { KeyBinding, KeyboardDeviceType, keysAreEqual } from "@model/keyboard";
 import { H3 } from "@ux/Typography";
 
+
+
 import { KeyLayout } from "./Configuration";
 import { KeyboardKey } from "./KeyboardKey";
+
 
 export type LayerProps = {
   layer: number;
@@ -31,7 +36,7 @@ export function Layer({
         <div
           className="grid gap-2"
           style={{
-            gridTemplateColumns: `repeat(${keyLayout.columns}, 8rem)`,
+            gridTemplateColumns: `repeat(${keyLayout.columns}, 5rem)`,
           }}
         >
           {Array(keyboardDeviceType.buttons)
@@ -42,7 +47,7 @@ export function Layer({
                 <KeyboardKey
                   as="button"
                   key={i}
-                  className="size-32"
+                  className="size-20"
                   macro={binding?.expansion}
                   origin={binding?.origin ?? "placeholder"}
                   onClick={() => onSelectBinding({ key: i, layer: layer })}
@@ -56,9 +61,9 @@ export function Layer({
         </div>
         <div className="grid grid-cols-3 gap-2">
           {}
-          <RotateCcw className="justify-self-center text-neutral-400" />
-          <MousePointerClick className="justify-self-center text-neutral-400" />
-          <RotateCw className="justify-self-center text-neutral-400" />
+          <RotateCcw className="text-tertiary justify-self-center" />
+          <MousePointerClick className="text-tertiary justify-self-center" />
+          <RotateCw className="text-tertiary justify-self-center" />
           {Array(keyboardDeviceType.encoders)
             .fill(null)
             .flatMap((_, i) => {
@@ -78,7 +83,7 @@ export function Layer({
                 <KeyboardKey
                   as="button"
                   key={`${i}.ccw`}
-                  className="size-32"
+                  className="size-20"
                   variant="encoder-ccw"
                   macro={ccw?.expansion}
                   origin={ccw?.origin ?? "placeholder"}
@@ -96,7 +101,7 @@ export function Layer({
                 <KeyboardKey
                   as="button"
                   key={`${i}.press`}
-                  className="size-32"
+                  className="size-20"
                   variant="encoder"
                   macro={press?.expansion}
                   origin={press?.origin ?? "placeholder"}
@@ -114,7 +119,7 @@ export function Layer({
                 <KeyboardKey
                   as="button"
                   key={`${i}.cw`}
-                  className="size-32"
+                  className="size-20"
                   variant="encoder-cw"
                   macro={cw?.expansion}
                   origin={cw?.origin ?? "placeholder"}

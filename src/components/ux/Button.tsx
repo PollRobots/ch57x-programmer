@@ -1,6 +1,10 @@
 import React from "react";
 import { twMerge } from "tailwind-merge";
 
+
+
+
+
 /**
  * Properties for a button.
  *
@@ -20,11 +24,11 @@ const COMMON_STYLES =
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
   default:
-    "text-neutral-600 bg-neutral-100 border-neutral-400 hover:bg-neutral-200 hover:text-neutral-800 focus:ring-1 focus:ring-neutral-400 shadow-xs",
+    "text-secondary bg-neutral-100 border-neutral-400 hover:bg-neutral-200 hover:text-default focus:ring-1 focus:ring-neutral-400 shadow-xs",
   primary:
     "text-white bg-indigo-500 hover:bg-indigo-600 border-transparent focus:ring-1 focus:ring-indigo-500 shadow-xs",
   invisible:
-    "text-neutral-600 border-transparent hover:text-neutral-800 focus:ring-1 focus:ring-neutral-400",
+    "text-secondary border-transparent hover:text-default focus:ring-1 focus:ring-neutral-400",
 };
 
 const SIZE_STYLES: Record<ButtonSize, string> = {
