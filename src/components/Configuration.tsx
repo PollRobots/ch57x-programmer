@@ -54,11 +54,7 @@ export function Configuration(props: ConfigurationProps) {
   return (
     <Expando
       defaultOpen
-      title={
-        <H3 size="lg" strong>
-          Keyboard configuration
-        </H3>
-      }
+      title={<H3 size="lg">Keyboard configuration</H3>}
       className="border-r border-neutral-400 bg-neutral-200"
       openContent={<OpenConfiguration {...props} />}
       collapseDirection="left"

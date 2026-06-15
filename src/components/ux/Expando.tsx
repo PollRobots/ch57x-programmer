@@ -5,12 +5,17 @@ import {
 } from "@headlessui/react";
 import { cva } from "class-variance-authority";
 import {
+  PanelBottomClose,
+  PanelBottomOpen,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
+  PanelTopClose,
+  PanelTopOpen,
 } from "lucide-react";
 import React from "react";
+import { twMerge } from "tailwind-merge";
 
 export type ExpandoProps = {
   defaultOpen?: boolean;
@@ -19,7 +24,7 @@ export type ExpandoProps = {
   collapseDirection: ExpandoCollapseDirection;
 } & Omit<React.HTMLAttributes<HTMLDivElement>, "children" | "title">;
 
-export type ExpandoCollapseDirection = "left" | "right";
+export type ExpandoCollapseDirection = "left" | "right" | "up" | "down";
 
 const disclosureButton = cva("flex-none");
 
@@ -38,6 +43,8 @@ const topPanel = cva(
       collapseDirection: {
         left: "flex-row",
         right: "flex-row-reverse",
+        up: "flex-row",
+        down: "flex-row",
       },
     },
   }
@@ -46,9 +53,27 @@ const titleDiv = cva("", {
   variants: {
     open: {
       true: null,
-      false: "hidden",
+      false: null,
+    },
+    collapseDirection: {
+      left: null,
+      right: null,
+      up: null,
+      down: null,
     },
   },
+  compoundVariants: [
+    {
+      open: false,
+      collapseDirection: "left",
+      className: "hidden",
+    },
+    {
+      open: false,
+      collapseDirection: "right",
+      className: "hidden",
+    },
+  ],
 });
 
 export function Expando({
@@ -62,14 +87,18 @@ export function Expando({
   return (
     <Disclosure defaultOpen={defaultOpen}>
       {({ open }) => (
-        <nav className={expando({ className })} {...other}>
+        <nav className={twMerge(expando({ className }))} {...other}>
           <div className={topPanel({ open, collapseDirection })}>
-            <div className={titleDiv({ open })}>{title}</div>
+            <div className={titleDiv({ open, collapseDirection })}>{title}</div>
             <DisclosureButton className={disclosureButton()}>
               {collapseDirection === "left" &&
                 (open ? <PanelLeftClose /> : <PanelLeftOpen />)}
               {collapseDirection === "right" &&
                 (open ? <PanelRightClose /> : <PanelRightOpen />)}
+              {collapseDirection === "up" &&
+                (open ? <PanelTopClose /> : <PanelTopOpen />)}
+              {collapseDirection === "down" &&
+                (open ? <PanelBottomClose /> : <PanelBottomOpen />)}
             </DisclosureButton>
           </div>
           <DisclosurePanel className={disclosurePanel({ open })}>

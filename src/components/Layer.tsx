@@ -1,16 +1,11 @@
 import { MousePointerClick, RotateCcw, RotateCw } from "lucide-react";
 import React from "react";
 
-
-
 import { KeyBinding, KeyboardDeviceType, keysAreEqual } from "@model/keyboard";
 import { H3 } from "@ux/Typography";
 
-
-
 import { KeyLayout } from "./Configuration";
 import { KeyboardKey } from "./KeyboardKey";
-
 
 export type LayerProps = {
   layer: number;

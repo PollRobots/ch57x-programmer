@@ -1,5 +1,6 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import React from "react";
+import { twMerge } from "tailwind-merge";
 
 const button = cva(
   "box-border border focus:ring-1 rounded-lg focus:outline-none select-none",
@@ -44,7 +45,7 @@ export function Button({
 }: React.PropsWithChildren<ButtonProps>) {
   return (
     <button
-      className={button({ size, variant, disabled, className })}
+      className={twMerge(button({ size, variant, disabled, className }))}
       disabled={disabled ?? undefined}
       type="button"
       {...other}

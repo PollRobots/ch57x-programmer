@@ -16,6 +16,52 @@ export const WELL_KNOWN_CODES = [
   "F22", "F23", "F24",
 ] as const;
 
+// prettier-ignore
+export const FUNCTION_KEYS = [
+  "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8",
+  "F9", "F10", "F11", "F12", "F13", "F14", "F15", "F16",
+  "F17", "F18", "F19", "F20", "F21", "F22", "F23", "F24",
+] as const;
+export type FunctionKey = typeof FUNCTION_KEYS[number];
+export function isFunctionKey(value: unknown): value is FunctionKey {
+  return typeof value === 'string' && FUNCTION_KEYS.includes(value as FunctionKey);
+}
+
+// prettier-ignore
+export const NUMPAD_KEYS = [
+  "NumPadSlash", "NumPadAsterisk",
+  "NumPadMinus", "NumPadPlus", 
+  "NumPad1", "NumPad2", "NumPad3", "NumPad4", "NumPad5",
+  "NumPad6", "NumPad7", "NumPad8", "NumPad9", "NumPad0",
+  "NumPadDot", "NumPadEqual",
+] as const;
+export type NumPadKey = typeof NUMPAD_KEYS[number];
+export function isNumPadKey(value: unknown): value is NumPadKey {
+  return typeof value === 'string' && NUMPAD_KEYS.includes(value as NumPadKey);
+}
+
+export const PUNCTUATION_KEYS = [
+  "Minus", "Equal", "LeftBracket", "RightBracket",
+  "Backslash", "NonUSHash", "Semicolon",
+  "Quote", "Grave", "Comma", "Dot", "Slash",
+] as const;
+export type PunctuationKey = typeof PUNCTUATION_KEYS[number];
+export function isPunctuationKey(value: unknown): value is PunctuationKey {
+  return typeof value === 'string' && PUNCTUATION_KEYS.includes(value as PunctuationKey);
+}
+
+export const SPECIAL_KEYS = [
+  "Enter", "NumPadEnter", "Escape", "Backspace", "Tab",
+  "Space", "NumLock", "CapsLock", "PrintScreen", "ScrollLock",
+  "Pause", "Insert", "Home", "PageUp", "Delete",
+  "End", "PageDown", "Right", "Left", "Down",
+  "Up", "NonUSBackslash", "Application", "Power",
+] as const;
+export type SpecialKey = typeof SPECIAL_KEYS[number];
+export function isSpecialKey(value: unknown): value is SpecialKey {
+  return typeof value === 'string' && SPECIAL_KEYS.includes(value as SpecialKey);
+}
+
 export type WellKnownCode = (typeof WELL_KNOWN_CODES)[number];
 
 export function isWellKnownCode(value: unknown): value is WellKnownCode {

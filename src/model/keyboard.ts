@@ -1,8 +1,5 @@
-import {
-  isWellKnownCode,
-  WellKnownCode,
-  wellKnownCodeValue,
-} from "./key_codes";
+import { isWellKnownCode, WellKnownCode, wellKnownCodeValue } from "./key_codes";
+
 
 export type Keyboard = {
   readonly name: string;
@@ -192,7 +189,7 @@ const MODIFIERS = [
 
 export type Modifier = (typeof MODIFIERS)[number];
 
-function isModifier(value: unknown): value is Modifier {
+export function isModifier(value: unknown): value is Modifier {
   return typeof value === "string" && MODIFIERS.includes(value as Modifier);
 }
 

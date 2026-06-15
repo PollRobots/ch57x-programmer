@@ -1,8 +1,16 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import React from "react";
+import { twMerge } from "tailwind-merge";
 
-const typography = cva("text-default", {
+const typography = cva("", {
   variants: {
+    as: {
+      h1: "text-default",
+      h2: "text-default",
+      h3: "text-default",
+      h4: "text-default",
+      text: null,
+    },
     size: {
       xs: "text-xs",
       sm: "text-sm",
@@ -28,7 +36,7 @@ const typography = cva("text-default", {
 export type TypographyProps = VariantProps<typeof typography> &
   React.HTMLAttributes<HTMLSpanElement>;
 
-type TypographyElement = "h1" | "h2" | "h3" | "h4" | "text";
+type TypographyElement = Exclude<TypographyProps["as"], null | undefined>;
 
 const ELEMENT_DEFINITION: Record<
   TypographyElement,
@@ -74,7 +82,10 @@ function makeTypographyComponent(
     ...other
   }: React.PropsWithChildren<TypographyProps>) => {
     return (
-      <Component className={typography({ size, strong, className })} {...other}>
+      <Component
+        className={twMerge(typography({ as, size, strong, className }))}
+        {...other}
+      >
         {children}
       </Component>
     );

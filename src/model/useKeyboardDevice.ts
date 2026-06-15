@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 
-
-
 import { WELL_KNOWN_CODES } from "./key_codes";
-import { EncoderAction, KeyBinding, Keyboard, KeyboardDeviceType, keysAreEqual, UNKNOWN_KEYBOARD_DEVICE } from "./keyboard";
-
+import {
+  EncoderAction,
+  KeyBinding,
+  Keyboard,
+  KeyboardDeviceType,
+  keysAreEqual,
+  UNKNOWN_KEYBOARD_DEVICE,
+} from "./keyboard";
 
 export type KeyboardDevice = {
   keyboard: Keyboard;

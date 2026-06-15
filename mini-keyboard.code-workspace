@@ -11,5 +11,6 @@
     "prettier.requireConfig": true,
     "prettier.useEditorConfig": false,
     "prettier.configPath": "./prettier.config.js",
+    "tailwindCSS.classFunctions": ["cva"],
   },
 }

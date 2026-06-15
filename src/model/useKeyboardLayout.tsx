@@ -1,8 +1,12 @@
 import React, { createContext, Suspense, useCallback, useContext } from "react";
 
+
+
 import { keyboardEventCodeFromWellKnowCode, WellKnownCode } from "./key_codes";
 
+
 export type KeyboardLayout = {
+  isFallback: boolean;
   getKeyName: (code: string) => string | undefined;
   getCodeName: (wellKnownCode: WellKnownCode) => string | undefined;
 };
@@ -29,12 +33,14 @@ export function useKeyboardLayoutRoot(): KeyboardLayout {
   );
 
   return {
+    isFallback: false,
     getKeyName,
     getCodeName,
   };
 }
 
 const KeyboardLayoutContext = createContext<KeyboardLayout>({
+  isFallback: true,
   getKeyName: (code: string) => code,
   getCodeName: (wellKnownCode: WellKnownCode) =>
     keyboardEventCodeFromWellKnowCode(wellKnownCode),
