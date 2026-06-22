@@ -50,17 +50,20 @@ export type KeyCodeProps = {
   simple?: boolean;
 } & React.ComponentProps<"span">;
 
-const COMMON_KEY_CLASS =
-  "inline-block rounded-sm border border-neutral-500 align-middle text-center px-1";
-
-const commonkeyclass = cva(COMMON_KEY_CLASS, {
-  variants: {
-    square: {
-      true: "size-7",
-      false: "min-h-7 min-w-7",
+const commonkeyclass = cva(
+  [
+    "inline-block rounded-sm border align-middle text-center px-1",
+    "border-neutral-500 dark:border-neutral-400",
+  ],
+  {
+    variants: {
+      square: {
+        true: "size-7",
+        false: "min-h-7 min-w-7",
+      },
     },
-  },
-});
+  }
+);
 
 export function KeyCode({ code, className, ...other }: KeyCodeProps) {
   if (typeof code === "number") {
@@ -219,7 +222,9 @@ export function DisplayNumPadKey({
       {...other}
     >
       <span>{name}</span>
-      <span className="text-secondary align-super text-xs">N</span>
+      <span className="text-secondary align-super text-xs dark:text-white">
+        N
+      </span>
     </span>
   );
 }
@@ -353,7 +358,9 @@ function DisplaySpecialKey({
               name: (
                 <span>
                   <CornerDownLeft className="inline-block size-4" />
-                  <span className="text-secondary align-super text-xs">N</span>
+                  <span className="text-secondary align-super text-xs dark:text-white">
+                    N
+                  </span>
                 </span>
               ),
             };

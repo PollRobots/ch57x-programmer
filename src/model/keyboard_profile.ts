@@ -1,10 +1,26 @@
+import { z } from "zod";
+
 import {
-  isKeyBinding,
-  isKeyboardDeviceType,
   KeyBinding,
+  KeyBindingSchema,
   KeyboardDeviceType,
+  KeyboardDeviceTypeSchema,
 } from "./keyboard";
-import { VendorId } from "./usb";
+import { VendorId, VendorIdSchema } from "./usb";
+
+export type KeyLayout = {
+  rows: number;
+  columns: number;
+};
+
+export const KeyLayoutSchema = z.object({
+  rows: z.uint32(),
+  columns: z.uint32(),
+}) satisfies z.ZodType<KeyLayout>;
+
+export function isKeyLayout(value: unknown): value is KeyLayout {
+  return KeyLayoutSchema.safeParse(value).success;
+}
 
 export type KeyboardProfile = {
   name: string;
@@ -15,44 +31,17 @@ export type KeyboardProfile = {
   bindingsByLayer: KeyBinding[][];
 };
 
-function isKeyboardProfile(value: unknown): value is KeyboardProfile {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  return (
-    "name" in value &&
-    typeof value.name === "string" &&
-    "vendorId" in value &&
-    Number.isInteger(value.vendorId) &&
-    "productId" in value &&
-    Number.isInteger(value.productId) &&
-    "keyboardDeviceType" in value &&
-    isKeyboardDeviceType(value.keyboardDeviceType) &&
-    "layout" in value &&
-    isKeyLayout(value.layout) &&
-    "bindingsByLayer" in value &&
-    Array.isArray(value.bindingsByLayer) &&
-    value.bindingsByLayer.every(
-      layer =>
-        Array.isArray(layer) && layer.every(binding => isKeyBinding(binding))
-    )
-  );
-}
+export const KeyboardProfileSchema = z.object({
+  name: z.string(),
+  vendorId: VendorIdSchema,
+  productId: z.number(),
+  keyboardDeviceType: KeyboardDeviceTypeSchema,
+  layout: KeyLayoutSchema,
+  bindingsByLayer: z.array(z.array(KeyBindingSchema)),
+}) satisfies z.ZodType<KeyboardProfile>;
 
-export type KeyLayout = {
-  rows: number;
-  columns: number;
-};
-
-function isKeyLayout(value: unknown): value is KeyLayout {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "rows" in value &&
-    Number.isInteger(value.rows) &&
-    "columns" in value &&
-    Number.isInteger(value.columns)
-  );
+function parseKeyboardProfile(input: string): KeyboardProfile {
+  return KeyboardProfileSchema.parse(JSON.parse(input));
 }
 
 const PROFILE_PREFIX = "932F5789-5834-46CD-8F29-C987D8493C91-profile";
@@ -68,7 +57,12 @@ function profileKey(profile: KeyboardProfile) {
 
 export function saveProfile(profile: KeyboardProfile): string {
   const key = profileKey(profile);
-  localStorage.setItem(key, JSON.stringify(profile));
+  const sanitized = KeyboardProfileSchema.safeParse(profile);
+  if (sanitized.success) {
+    // update all bindings to have 'profile' origin
+    forceOriginsToProfile(sanitized.data.bindingsByLayer);
+    localStorage.setItem(key, JSON.stringify(sanitized.data));
+  }
   return key;
 }
 
@@ -114,13 +108,20 @@ export function loadProfile(key: string): KeyboardProfile | undefined {
   const raw = localStorage.getItem(key);
   if (raw) {
     try {
-      const profile = JSON.parse(raw);
-      if (isKeyboardProfile(profile)) {
-        return profile;
-      }
+      const profile = parseKeyboardProfile(raw);
+      forceOriginsToProfile(profile.bindingsByLayer);
+      return profile;
     } catch (error) {
       console.error("Error parsing profile:", key, error);
     }
   }
   return;
+}
+
+export function forceOriginsToProfile(bindingsByLayer: KeyBinding[][]) {
+  for (const layer of bindingsByLayer) {
+    for (const keyBinding of layer) {
+      keyBinding.origin = "profile";
+    }
+  }
 }

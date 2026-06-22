@@ -27,6 +27,7 @@
     "types": ["w3c-web-usb", "w3c-web-hid"],
     "paths": {
       "@ux/*": ["./src/components/ux/*"],
+      "@hooks/*": ["./src/components/hooks/*"],
       "@model/*": ["./src/model/*"]
     }
   },

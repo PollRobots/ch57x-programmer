@@ -1,5 +1,10 @@
-import { isWellKnownCode, WellKnownCode, wellKnownCodeValue } from "./key_codes";
+import { z } from "zod";
 
+import {
+  WellKnownCode,
+  WellKnownCodeSchema,
+  wellKnownCodeValue,
+} from "./key_codes";
 
 export type Keyboard = {
   readonly name: string;
@@ -25,6 +30,13 @@ export const NoopKeyboard: Keyboard = {
 
 export type KeyboardPacketType = "device" | "config";
 
+export type KeyboardFamily = "884x" | "%other";
+
+export const KeyboardFamilySchema = z.union([
+  z.literal("884x"),
+  z.literal("%other"),
+]) satisfies z.ZodType<KeyboardFamily>;
+
 export type KeyboardDeviceType = {
   family: KeyboardFamily;
   buttons: number;
@@ -32,7 +44,12 @@ export type KeyboardDeviceType = {
   layers: number;
 };
 
-export type KeyboardFamily = "884x" | "%other";
+export const KeyboardDeviceTypeSchema = z.object({
+  family: KeyboardFamilySchema,
+  buttons: z.uint32(),
+  encoders: z.uint32(),
+  layers: z.uint32(),
+}) satisfies z.ZodType<KeyboardDeviceType>;
 
 export function isKeyboardDeviceType(
   value: unknown
@@ -62,46 +79,31 @@ export const UNKNOWN_KEYBOARD_DEVICE: KeyboardDeviceType = {
   layers: 0,
 };
 
-export type KeyBinding = {
-  layer: number;
-  key: Key;
-  expansion: Macro;
-  origin: KeyBindingOrigin;
-};
-
-export function isKeyBinding(value: unknown): value is KeyBinding {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "layer" in value &&
-    Number.isInteger(value.layer) &&
-    "key" in value &&
-    isKey(value.key) &&
-    "expansion" in value &&
-    isMacro(value.expansion) &&
-    "origin" in value &&
-    isKeyBindingOrigin(value.origin)
-  );
-}
-
-const KEY_BINDING_ORIGINS = ["device", "editor", "placeholder"] as const;
+const KEY_BINDING_ORIGINS = [
+  "device",
+  "editor",
+  "profile",
+  "placeholder",
+] as const;
 
 export type KeyBindingOrigin = (typeof KEY_BINDING_ORIGINS)[number];
+export const KeyBindingOriginSchema = z.union(
+  KEY_BINDING_ORIGINS.map(k => z.literal(k))
+) satisfies z.ZodType<KeyBindingOrigin>;
 
-function isKeyBindingOrigin(value: unknown): value is KeyBindingOrigin {
-  return (
-    typeof value === "string" &&
-    KEY_BINDING_ORIGINS.includes(value as KeyBindingOrigin)
-  );
+export function isKeyBindingOrigin(value: unknown): value is KeyBindingOrigin {
+  return KeyBindingOriginSchema.safeParse(value).success;
 }
 
 const ENCODER_ACTION = ["ccw", "press", "cw"] as const;
 export type EncoderAction = (typeof ENCODER_ACTION)[number];
 
-function isEncoderAction(value: unknown): value is EncoderAction {
-  return (
-    typeof value === "string" && ENCODER_ACTION.includes(value as EncoderAction)
-  );
+export const EncoderActionSchema = z.union(
+  ENCODER_ACTION.map(a => z.literal(a))
+) satisfies z.ZodType<EncoderAction>;
+
+export function isEncoderAction(value: unknown): value is EncoderAction {
+  return EncoderActionSchema.safeParse(value).success;
 }
 
 export function encoderActionValue(encoderAction: EncoderAction): number {
@@ -131,27 +133,32 @@ export function encoderActionFromValue(
 
 export type Encoder = [number, EncoderAction];
 
+export const EncoderSchema = z.tuple([
+  z.uint32(),
+  EncoderActionSchema,
+]) satisfies z.ZodType<Encoder>;
+
 export function isEncoder(value: unknown): value is Encoder {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    Array.isArray(value) &&
-    value.length == 2 &&
-    Number.isInteger(value[0]) &&
-    isEncoderAction(value[1])
-  );
+  return EncoderSchema.safeParse(value).success;
 }
 
 export type Button = number;
 
+export const ButtonSchema = z.uint32() satisfies z.ZodType<Button>;
+
 export function isButton(value: unknown): value is Button {
-  return Number.isInteger(value);
+  return ButtonSchema.safeParse(value).success;
 }
 
 export type Key = Button | Encoder;
 
-function isKey(value: unknown): value is Key {
-  return isButton(value) || isEncoder(value);
+export const KeySchema = z.union([
+  ButtonSchema,
+  EncoderSchema,
+]) satisfies z.ZodType<Key>;
+
+export function isKey(value: unknown): value is Key {
+  return KeySchema.safeParse(value).success;
 }
 
 export function keysAreEqual(a: Key, b: Key) {
@@ -189,8 +196,12 @@ const MODIFIERS = [
 
 export type Modifier = (typeof MODIFIERS)[number];
 
+export const ModifierSchema = z.union(
+  MODIFIERS.map(m => z.literal(m))
+) satisfies z.ZodType<Modifier>;
+
 export function isModifier(value: unknown): value is Modifier {
-  return typeof value === "string" && MODIFIERS.includes(value as Modifier);
+  return ModifierSchema.safeParse(value).success;
 }
 
 const PLATFORM_MODIFIERS = [
@@ -256,7 +267,11 @@ export function modifiersFromValue(value: number): Modifier[] {
   return modifiers;
 }
 
-const MEDIA_CODE = [
+export const MEDIA_CODE = [
+  "BrightnessUp",
+  "BrightnessDown",
+  "KbBrightnessUp",
+  "KbBrightnessDown",
   "Next",
   "Previous",
   "Stop",
@@ -265,16 +280,25 @@ const MEDIA_CODE = [
   "VolumeUp",
   "VolumeDown",
   "Favorites",
+  "Finder",
   "Calculator",
+  "Browser",
   "Screenlock",
 ] as const;
 export type MediaCode = (typeof MEDIA_CODE)[number];
+export const MediaCodeSchema = z.union(
+  MEDIA_CODE.map(m => z.literal(m))
+) satisfies z.ZodType<MediaCode>;
 
-function isMediaCode(value: unknown): value is MediaCode {
-  return typeof value === "string" && MEDIA_CODE.includes(value as MediaCode);
+export function isMediaCode(value: unknown): value is MediaCode {
+  return MediaCodeSchema.safeParse(value).success;
 }
 
 export const MediaCodeValues: Record<MediaCode, number> = {
+  BrightnessUp: 0x6f,
+  BrightnessDown: 0x70,
+  KbBrightnessUp: 0x79,
+  KbBrightnessDown: 0x7a,
   Next: 0xb5,
   Previous: 0xb6,
   Stop: 0xb7,
@@ -283,14 +307,25 @@ export const MediaCodeValues: Record<MediaCode, number> = {
   VolumeUp: 0xe9,
   VolumeDown: 0xea,
   Favorites: 0x182,
+  Finder: 0x184,
   Calculator: 0x192,
+  Browser: 0x196,
   Screenlock: 0x19e,
 };
 
+export type Custom = number;
+
+export const CustomSchema = z.uint32() satisfies z.ZodType<Custom>;
+
 export type Code = WellKnownCode | Custom;
 
-function isCode(value: unknown): value is Code {
-  return isWellKnownCode(value) || Number.isInteger(value);
+const CodeSchema = z.union([
+  WellKnownCodeSchema,
+  CustomSchema,
+]) satisfies z.ZodType<Code>;
+
+export function isCode(value: unknown): value is Code {
+  return CodeSchema.safeParse(value).success;
 }
 
 export function codeValue(code: Code | undefined): number {
@@ -304,31 +339,39 @@ export function codeValue(code: Code | undefined): number {
   return wellKnownCodeValue(code);
 }
 
-export type Custom = number;
-
 export type KeyChord = {
   modifiers: Modifier[];
   code?: Code;
 };
 
-function isKeyChord(value: unknown): value is KeyChord {
+export const KeyChordSchema = z.object({
+  modifiers: z.array(ModifierSchema),
+  code: CodeSchema,
+}) satisfies z.ZodType<KeyChord>;
+
+export function isKeyChord(value: unknown): value is KeyChord {
+  return KeyChordSchema.safeParse(value).success;
+}
+
+function keyChordsAreEqual(a: KeyChord, b: KeyChord | undefined) {
+  if (!b) {
+    return false;
+  }
   return (
-    typeof value === "object" &&
-    value !== null &&
-    "modifiers" in value &&
-    Array.isArray(value.modifiers) &&
-    value.modifiers.every(m => isModifier(m)) &&
-    (("code" in value && isCode(value.code)) || !("code" in value))
+    a.code === b.code &&
+    modifiersValue(a.modifiers) === modifiersValue(b.modifiers)
   );
 }
 
 const MOUSE_MODIFIER = ["Ctrl", "Shift", "Alt"] as const;
 export type MouseModifier = (typeof MOUSE_MODIFIER)[number];
 
-function isMouseModifier(value: unknown): value is MouseModifier {
-  return (
-    typeof value === "string" && MOUSE_MODIFIER.includes(value as MouseModifier)
-  );
+export const MouseModifierSchema = z.union(
+  MOUSE_MODIFIER.map(m => z.literal(m))
+) satisfies z.ZodType<MouseModifier>;
+
+export function isMouseModifier(value: unknown): value is MouseModifier {
+  return MouseModifierSchema.safeParse(value).success;
 }
 
 export function mouseModifierValue(
@@ -350,10 +393,12 @@ export function mouseModifierValue(
 const MOUSE_BUTTON = ["Left", "Right", "Middle"] as const;
 export type MouseButton = (typeof MOUSE_BUTTON)[number];
 
-function isMouseButton(value: unknown): value is MouseButton {
-  return (
-    typeof value === "string" && MOUSE_BUTTON.includes(value as MouseButton)
-  );
+export const MouseButtonSchema = z.union(
+  MOUSE_BUTTON.map(b => z.literal(b))
+) satisfies z.ZodType<MouseButton>;
+
+export function isMouseButton(value: unknown): value is MouseButton {
+  return MouseButtonSchema.safeParse(value).success;
 }
 
 export function mouseButtonValue(button: MouseButton | undefined): number {
@@ -378,6 +423,10 @@ export function mouseButtonsValue(buttons: MouseButton[]): number {
   );
 }
 
+function mouseButtonsAreEqual(a: MouseButton[], b: MouseButton[]): boolean {
+  return mouseButtonsValue(a) === mouseButtonsValue(b);
+}
+
 export type MouseAction =
   | {
       type: "Move";
@@ -399,63 +448,80 @@ export type MouseAction =
       delta: number;
     };
 
-function isMouseAction(value: unknown): value is MouseAction {
-  if (typeof value !== "object" || value === null || !("type" in value)) {
-    return false;
-  }
+export const MouseActionSchema = z.union([
+  z.object({
+    type: z.literal("Move"),
+    x: z.int32(),
+    y: z.int32(),
+  }),
+  z.object({
+    type: z.literal("Drag"),
+    buttons: z.array(MouseButtonSchema),
+    x: z.int32(),
+    y: z.int32(),
+  }),
+  z.object({
+    type: z.literal("Click"),
+    buttons: z.array(MouseButtonSchema),
+  }),
+  z.object({
+    type: z.literal("Wheel"),
+    delta: z.int32(),
+  }),
+]) satisfies z.ZodType<MouseAction>;
 
-  const buttons =
-    "buttons" in value &&
-    Array.isArray(value.buttons) &&
-    value.buttons.every(b => isMouseButton(b));
+export function isMouseAction(value: unknown): value is MouseAction {
+  return MouseActionSchema.safeParse(value).success;
+}
 
-  if (value.type === "Move" || value.type === "Drag") {
-    return (
-      "x" in value &&
-      Number.isInteger(value.x) &&
-      "y" in value &&
-      Number.isInteger(value.y) &&
-      (value.type === "Drag" ? buttons : true)
-    );
+function mouseActionsAreEqual(a: MouseAction, b: MouseAction): boolean {
+  switch (a.type) {
+    case "Move":
+      return b.type === "Move" && a.x === b.x && a.y === b.y;
+    case "Drag":
+      return (
+        b.type === "Drag" &&
+        a.x === b.y &&
+        a.y === b.y &&
+        mouseButtonsAreEqual(a.buttons, b.buttons)
+      );
+    case "Click":
+      return b.type === "Click" && mouseButtonsAreEqual(a.buttons, b.buttons);
+    case "Wheel":
+      return b.type === "Wheel" && a.delta === b.delta;
   }
-  if (value.type === "Click") {
-    return buttons;
-  }
-  if (value.type === "Wheel") {
-    return "delta" in value && Number.isInteger(value.delta);
-  }
-  return false;
 }
 
 export type MouseEvent = {
   type: "Mouse";
   action: MouseAction;
-  modifier?: MouseModifier;
+  modifier?: MouseModifier | undefined;
 };
 
+export const MouseEventSchema = z.object({
+  type: z.literal("Mouse"),
+  action: MouseActionSchema,
+  modifier: MouseModifierSchema.optional(),
+}) satisfies z.ZodType<MouseEvent>;
+
 export function isMouseEvent(value: unknown): value is MouseEvent {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    value.type === "Mouse" &&
-    "action" in value &&
-    isMouseAction(value.action) &&
-    ("modifier" in value ? isMouseModifier(value.modifier) : true)
-  );
+  return MouseEventSchema.safeParse(value).success;
+}
+
+function mouseEventsAreEqual(a: MouseEvent, b: MouseEvent): boolean {
+  return mouseActionsAreEqual(a.action, b.action) && a.modifier === b.modifier;
 }
 
 export type MacroOptions = {
   delay: number;
 };
 
-function isMacroOptions(value: unknown): value is MacroOptions {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "delay" in value &&
-    Number.isInteger(value.delay)
-  );
+const MacroOptionsSchema = z.object({
+  delay: z.uint32(),
+}) satisfies z.ZodType<MacroOptions>;
+
+export function isMacroOptions(value: unknown): value is MacroOptions {
+  return MacroOptionsSchema.safeParse(value).success;
 }
 
 export type KeyboardEvent = {
@@ -464,17 +530,23 @@ export type KeyboardEvent = {
   keyChords: KeyChord[];
 };
 
+const KeyboardEventSchema = z.object({
+  type: z.literal("Keyboard"),
+  options: MacroOptionsSchema,
+  keyChords: z.array(KeyChordSchema),
+}) satisfies z.ZodType<KeyboardEvent>;
+
 export function isKeyboardEvent(value: unknown): value is KeyboardEvent {
+  return KeyboardEventSchema.safeParse(value).success;
+}
+
+function keyboardEventsAreEqual(a: KeyboardEvent, b: KeyboardEvent): boolean {
   return (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    value.type === "Keyboard" &&
-    "options" in value &&
-    isMacroOptions(value.options) &&
-    "keyChords" in value &&
-    Array.isArray(value.keyChords) &&
-    value.keyChords.every(v => isKeyChord(v))
+    a.options.delay === b.options.delay &&
+    a.keyChords.length === b.keyChords.length &&
+    a.keyChords.every((keyChord, i) =>
+      keyChordsAreEqual(keyChord, b.keyChords[i])
+    )
   );
 }
 
@@ -483,21 +555,43 @@ export type MediaEvent = {
   mediaCode: MediaCode;
 };
 
+export const MediaEventSchema = z.object({
+  type: z.literal("Media"),
+  mediaCode: MediaCodeSchema,
+}) satisfies z.ZodType<MediaEvent>;
+
 export function isMediaEvent(value: unknown): value is MediaEvent {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    value.type === "Media" &&
-    "mediaCode" in value &&
-    isMediaCode(value.mediaCode)
-  );
+  return MediaEventSchema.safeParse(value).success;
+}
+
+function mediaEventsAreEqual(a: MediaEvent, b: MediaEvent): boolean {
+  return a.mediaCode === b.mediaCode;
 }
 
 export type Macro = KeyboardEvent | MouseEvent | MediaEvent;
 
-function isMacro(value: unknown): value is Macro {
+export const MacroSchema = z.union([
+  KeyboardEventSchema,
+  MouseEventSchema,
+  MediaEventSchema,
+]) satisfies z.ZodType<Macro>;
+
+export function isMacro(value: unknown): value is Macro {
   return isKeyboardEvent(value) || isMouseEvent(value) || isMediaEvent(value);
+}
+
+export function macrosAreEqual(a: Macro, b: Macro): boolean {
+  if (a.type !== b.type) {
+    return false;
+  }
+  switch (a.type) {
+    case "Keyboard":
+      return keyboardEventsAreEqual(a, b as KeyboardEvent);
+    case "Mouse":
+      return mouseEventsAreEqual(a, b as MouseEvent);
+    case "Media":
+      return mediaEventsAreEqual(a, b as MediaEvent);
+  }
 }
 
 export function macroKind(macro: Macro): number {
@@ -524,4 +618,22 @@ export function macroKindFromValue(
     default:
       return;
   }
+}
+
+export type KeyBinding = {
+  layer: number;
+  key: Key;
+  expansion: Macro;
+  origin: KeyBindingOrigin;
+};
+
+export const KeyBindingSchema = z.object({
+  layer: z.uint32(),
+  key: KeySchema,
+  expansion: MacroSchema,
+  origin: KeyBindingOriginSchema,
+}) satisfies z.ZodType<KeyBinding>;
+
+export function isKeyBinding(value: unknown): value is KeyBinding {
+  return KeyBindingSchema.safeParse(value).success;
 }

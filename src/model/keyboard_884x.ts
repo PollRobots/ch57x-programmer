@@ -10,6 +10,7 @@ import {
   KeyChord,
   macroKind,
   macroKindFromValue,
+  MEDIA_CODE,
   MediaCodeValues,
   modifiersFromValue,
   modifiersValue,
@@ -215,9 +216,15 @@ export function makeKeyboard884(): Keyboard {
 
       // prettier-ignore
       const message = [
-        0x03, 0xfe, keyId(key), layer + 1,
-        macroKind(expansion), 0x00, 0x00, 0x00,
-        0x00, 0x00,
+        0xfe,
+        keyId(key),
+        layer + 1,
+        macroKind(expansion),
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
       ];
 
       switch (expansion.type) {
@@ -289,6 +296,8 @@ export function makeKeyboard884(): Keyboard {
         }
       }
 
+      messages.push(message);
+
       if (expansion.type === "Keyboard" && expansion.options.delay > 0) {
         const delay = expansion.options.delay;
         if (delay > 6000) {
@@ -298,12 +307,12 @@ export function makeKeyboard884(): Keyboard {
         const low = delay & 0xff;
         const high = (delay >> 8) & 0xff;
 
-        messages.push([0x03, 0xfe, keyId(key), layer + 1, 5, low, high]);
+        messages.push([0xfe, keyId(key), layer + 1, 5, low, high]);
       }
 
-      messages.push([0x03, 0xaa, 0xaa, 0, 0, 0, 0, 0, 0]);
-      messages.push([0x03, 0xfd, 0xfe, 0xff]);
-      messages.push([0x03, 0xaa, 0xaa, 0, 0, 0, 0, 0, 0]);
+      messages.push([0xaa, 0xaa, 0, 0, 0, 0, 0, 0]);
+      messages.push([0xfd, 0xfe, 0xff]);
+      messages.push([0xaa, 0xaa, 0, 0, 0, 0, 0, 0]);
 
       return messages;
     },
@@ -410,7 +419,28 @@ export function makeKeyboard884(): Keyboard {
             origin: "device",
           };
         }
-        case "Media":
+        case "Media": {
+          const length = data[9];
+          if (length !== 1) {
+            return;
+          }
+          const low = data[10] ?? 0;
+          const high = data[11] ?? 0;
+          const code = low + (high << 8);
+          const mediaCode = MEDIA_CODE.find(m => MediaCodeValues[m] === code);
+          if (mediaCode) {
+            return {
+              layer,
+              key,
+              expansion: {
+                type: "Media",
+                mediaCode,
+              },
+              origin: "device",
+            };
+          }
+          break;
+        }
         case "Mouse":
           break;
       }

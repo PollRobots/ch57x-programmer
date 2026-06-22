@@ -5,10 +5,10 @@ import { twMerge } from "tailwind-merge";
 const typography = cva("", {
   variants: {
     as: {
-      h1: "text-default",
-      h2: "text-default",
-      h3: "text-default",
-      h4: "text-default",
+      h1: "text-default dark:text-white",
+      h2: "text-default dark:text-white",
+      h3: "text-default dark:text-white",
+      h4: "text-default dark:text-white",
       text: null,
     },
     size: {

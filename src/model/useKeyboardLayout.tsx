@@ -1,9 +1,6 @@
 import React, { createContext, Suspense, useCallback, useContext } from "react";
 
-
-
 import { keyboardEventCodeFromWellKnowCode, WellKnownCode } from "./key_codes";
-
 
 export type KeyboardLayout = {
   isFallback: boolean;

@@ -1,5 +1,11 @@
+import { z } from "zod";
+
 export const KNOWN_VENDOR_IDS = [0x1189] as const;
 export type VendorId = (typeof KNOWN_VENDOR_IDS)[number];
+
+export const VendorIdSchema = z.union(
+  KNOWN_VENDOR_IDS.map(id => z.literal(id))
+) satisfies z.ZodType<VendorId>;
 
 export const KNOWN_PRODUCT_IDS: Record<VendorId, number[]> = {
   0x1189: [0x8840, 0x8842, 0x8890],

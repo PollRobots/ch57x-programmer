@@ -37,6 +37,8 @@ import {
 import { useKeyboardLayout } from "@model/useKeyboardLayout";
 import { Text } from "@ux/Typography";
 
+import { MediaKey } from "./MediaKey";
+
 export type DisplayKeyBindingProps = {
   macro: Macro;
 };
@@ -48,7 +50,7 @@ export function DisplayKeyBinding({ macro }: DisplayKeyBindingProps) {
         <DisplayKeyboardMacro keyChords={macro.keyChords} />
       )}
       {isMouseEvent(macro) && <DisplayMouseMacro />}
-      {isMediaEvent(macro) && <DisplayMediaMacro />}
+      {isMediaEvent(macro) && <MediaKey size="sm" code={macro.mediaCode} />}
     </>
   );
 }
@@ -102,10 +104,6 @@ export function DisplayKeyChord({ modifiers, code }: KeyChord) {
       <KeyCode code={code} />
     </div>
   );
-}
-
-function DisplayMediaMacro() {
-  return "media";
 }
 
 function DisplayMouseMacro() {
@@ -208,7 +206,9 @@ function NumPadKey({ numPadKey }: NumPadKeyProps) {
   return (
     <span className="inline-block size-6 rounded-sm border border-neutral-500 text-center">
       <span>{name}</span>
-      <span className="text-secondary align-super text-xs">N</span>
+      <span className="text-secondary align-super text-xs dark:text-white">
+        N
+      </span>
     </span>
   );
 }
@@ -248,7 +248,7 @@ function PunctuationKey({ punctuationKey }: PunctuationKeyProps) {
   }, [punctuationKey]);
 
   return (
-    <span className="inline-block size-6 rounded-sm border border-neutral-500 text-center">
+    <span className="inline-block size-6 rounded-sm border border-neutral-500 text-center dark:border-neutral-400">
       {name}
     </span>
   );
@@ -290,7 +290,9 @@ function SpecialKey({ specialKey }: SpecialKeyProps) {
         return (
           <span>
             <span>enter</span>
-            <span className="text-secondary align-super text-xs">N</span>
+            <span className="text-secondary align-super text-xs dark:text-white">
+              N
+            </span>
           </span>
         );
       case "Backspace":
@@ -324,7 +326,7 @@ function SpecialKey({ specialKey }: SpecialKeyProps) {
   }, [specialKey]);
 
   return (
-    <span className="inline-block h-6 rounded-sm border border-neutral-500 text-center">
+    <span className="inline-block h-6 rounded-sm border border-neutral-500 text-center dark:border-neutral-400">
       {name}
     </span>
   );

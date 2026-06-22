@@ -8,6 +8,7 @@ import {
   Keyboard,
   KeyboardDeviceType,
   keysAreEqual,
+  macrosAreEqual,
   UNKNOWN_KEYBOARD_DEVICE,
 } from "./keyboard";
 
@@ -24,6 +25,7 @@ export type ActiveKeyboardDevice = {
   busy: boolean;
   readDeviceType: () => void;
   readConfiguration: () => void;
+  writeKeyBindings: (bindings: KeyBinding[]) => Promise<boolean>;
 };
 
 export function useKeyboardDevice({
@@ -37,6 +39,7 @@ export function useKeyboardDevice({
   const [errors, setErrors] = useState<Error[]>([]);
   const pendingBindings = useRef<KeyBinding[]>([]);
   const [keyBindings, setKeyBindings] = useState<KeyBinding[]>([]);
+  const pauseUpdate = useRef<boolean>(false);
 
   const defaultBindings = useMemo(() => {
     const defaultBindings: KeyBinding[] = [];
@@ -81,7 +84,7 @@ export function useKeyboardDevice({
 
   const updateKeyBindings = useDebounceCallback(
     () => {
-      if (pendingBindings.current.length === 0) {
+      if (pauseUpdate.current || pendingBindings.current.length === 0) {
         return;
       }
       const newBindings = pendingBindings.current;
@@ -161,7 +164,9 @@ export function useKeyboardDevice({
           const keyBinding = keyboard.parseConfigPacket(array);
           if (keyBinding) {
             pendingBindings.current.push(keyBinding);
-            updateKeyBindings();
+            if (!pauseUpdate.current) {
+              updateKeyBindings();
+            }
           } else {
             console.warn("Unable to parse config packet", array.slice(0, 16));
           }
@@ -174,7 +179,7 @@ export function useKeyboardDevice({
     device.addEventListener("inputreport", listener);
     readDeviceType();
     return () => device.removeEventListener("inputreport", listener);
-  }, [keyboard, device]);
+  }, [pauseUpdate, keyboard, device]);
 
   const readDeviceType = useCallback(() => {
     if (!device || pending) {
@@ -202,6 +207,62 @@ export function useKeyboardDevice({
       .finally(() => setPending(false));
   }, [keyboard, device, pending]);
 
+  const writeKeyBindings = useCallback(
+    (bindings: KeyBinding[]): Promise<boolean> => {
+      if (!device || pending || pauseUpdate.current) {
+        return Promise.resolve(false);
+      }
+      pauseUpdate.current = true;
+      readConfiguration();
+
+      const started = performance.now();
+      return new Promise<KeyBinding[]>((resolve, reject) => {
+        const write = () => {
+          if (keyBindings.length == pendingBindings.current.length) {
+            const bindings = pendingBindings.current;
+            pauseUpdate.current = false;
+            pendingBindings.current = [];
+            resolve(bindings);
+          } else if (performance.now() - started > 500) {
+            pauseUpdate.current = false;
+            updateKeyBindings();
+            reject(new Error("Timed out waiting for key bindings"));
+          } else {
+            requestAnimationFrame(write);
+          }
+        };
+        requestAnimationFrame(write);
+      })
+        .then(async deviceBindings => {
+          setPending(true);
+          // find the bindings that are different on the device
+          const updates = bindings.filter(binding => {
+            const matching = deviceBindings.find(
+              ({ key, layer }) =>
+                binding.layer === layer && keysAreEqual(key, binding.key)
+            );
+            if (!matching) {
+              return true;
+            }
+            return !macrosAreEqual(binding.expansion, matching.expansion);
+          });
+
+          const packets = updates.flatMap(({ layer, key, expansion }) =>
+            keyboard.bindKey(layer, key, expansion)
+          );
+
+          for (const packet of packets) {
+            await device.sendReport(3, makeBuffer(packet));
+          }
+          return true;
+        })
+        .finally(() => {
+          setPending(false);
+        });
+    },
+    [keyboard, device, pending, readConfiguration, keyBindings]
+  );
+
   return {
     name: keyboard.name,
     keyboardDeviceType: deviceType,
@@ -210,6 +271,7 @@ export function useKeyboardDevice({
     busy: pending,
     readDeviceType,
     readConfiguration,
+    writeKeyBindings,
   };
 }
 

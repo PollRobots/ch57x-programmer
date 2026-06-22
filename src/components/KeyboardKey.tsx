@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from "class-variance-authority";
-import { Asterisk } from "lucide-react";
+import { Asterisk, Keyboard, Triangle } from "lucide-react";
 import React from "react";
 
 import { KeyBindingOrigin, Macro } from "@model/keyboard";
@@ -8,20 +8,32 @@ import { Text } from "@ux/Typography";
 import { DisplayKeyBinding } from "./DisplayKeyBinding";
 
 const keyboardKey = cva(
-  "grid text-secondary hover:text-default text-center border",
+  [
+    "grid text-center border",
+    "text-secondary hover:text-default",
+    "dark:text-white dark:hover:text-white",
+  ],
   {
     variants: {
       variant: {
-        button:
-          "border-neutral-200 hover:border-neutral-400 rounded-md place-items-center" +
-          " bg-gradient-to-b from-neutral-50 to-neutral-200 via-neutral-100 hover:via-indigo-100",
-        "encoder-ccw":
-          "justify-items-center items-end border-transparent hover:border-neutral-200",
-        "encoder-cw":
-          "justify-items-center items-end border-transparent hover:border-neutral-200",
-        encoder:
-          "border-neutral-200 hover:border-neutral-400 rounded-full place-items-center" +
-          " bg-radial-[at_15%_15%] from-neutral-50 to-neutral-200 to-[85%] via-neutral-100 hover:via-indigo-100",
+        button: [
+          "rounded-md place-items-center bg-linear-to-b",
+          "from-neutral-50 via-neutral-100 hover:via-indigo-100",
+          "dark:from-neutral-900 dark:via-neutral-800 dark:hover:via-indigo-800",
+        ],
+        "encoder-ccw": [
+          "justify-items-center items-end border-transparent",
+          "hover:border-neutral-200 dark:hover:border-neutral-700",
+        ],
+        "encoder-cw": [
+          "justify-items-center items-end border-transparent",
+          "hover:border-neutral-200 dark:hover:border-neutral-700",
+        ],
+        encoder: [
+          "rounded-full place-items-center bg-radial-[at_15%_15%] to-85%",
+          "from-neutral-50 via-neutral-100 hover:via-indigo-100",
+          "dark:from-neutral-900 dark:via-neutral-800 dark:hover:via-indigo-800",
+        ],
       },
       selected: { true: null, false: null },
     },
@@ -29,18 +41,42 @@ const keyboardKey = cva(
       {
         variant: "button",
         selected: true,
-        class: "border-neutral-600 to-indigo-200",
+        class:
+          "border-neutral-600 to-indigo-200 dark:border-neutral-300 dark:to-indigo-700",
       },
-      { variant: "encoder-ccw", selected: true, class: "border-b-neutral-600" },
+      {
+        variant: "button",
+        selected: false,
+        class: [
+          "to-neutral-200 dark:to-neutral-700 ",
+          "border-neutral-200 hover:border-neutral-400",
+          "dark:border-neutral-700 dark:hover:border-neutral-500",
+        ],
+      },
+      {
+        variant: "encoder-ccw",
+        selected: true,
+        class: "border-b-neutral-600 dark:border-b-neutral-300",
+      },
       {
         variant: "encoder-cw",
         selected: true,
-        class: "border-b-neutral-600",
+        class: "border-b-neutral-600 dark:border-b-neutral-300",
       },
       {
         variant: "encoder",
         selected: true,
-        class: "border-neutral-600 to-indigo-200",
+        class:
+          "border-neutral-600 to-indigo-200 dark:border-neutral-600 dark:to-indigo-700",
+      },
+      {
+        variant: "encoder",
+        selected: false,
+        class: [
+          "to-neutral-200  dark:to-neutral-700",
+          "border-neutral-200 hover:border-neutral-400",
+          "dark:border-neutral-700 dark:hover:border-neutral-500",
+        ],
       },
     ],
   }
@@ -50,9 +86,10 @@ const marker = cva(
   {
     variants: {
       origin: {
-        device: "hidden",
+        device: "text-tertiary",
         editor: "text-red-500",
         placeholder: null,
+        profile: "text-blue-500",
       },
     },
   }
@@ -94,6 +131,8 @@ export function KeyboardKey({
       <div className={marker({ origin })}>
         {origin === "editor" && <Asterisk className="size-3" />}
         {origin === "placeholder" && <Text size="xs">P</Text>}
+        {origin === "profile" && <Triangle className="size-3" />}
+        {origin === "device" && <Keyboard className="size-3" />}
       </div>
     </Component>
   );

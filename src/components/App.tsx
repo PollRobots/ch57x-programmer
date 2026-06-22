@@ -1,4 +1,5 @@
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
+import { Asterisk } from "lucide-react";
 import React, {
   useCallback,
   useEffect,
@@ -13,10 +14,12 @@ import {
   KeyBinding,
   keysAreEqual,
   keysCompare,
+  Macro,
   NoopKeyboard,
 } from "@model/keyboard";
 import { makeKeyboard884 } from "@model/keyboard_884x";
 import {
+  forceOriginsToProfile,
   KeyboardProfile,
   KeyLayout,
   loadProfiles,
@@ -27,48 +30,92 @@ import { KeyboardDevice, useKeyboardDevice } from "@model/useKeyboardDevice";
 import { KeyboardLayoutProvider } from "@model/useKeyboardLayout";
 import { H1, H2, Text } from "@ux/Typography";
 
-import { Configuration } from "./Configuration";
 import { EditKey } from "./EditKey";
-import { Layer } from "./Layer";
+import { useSettings } from "./hooks/useSettings";
+import { Layer, OriginPreference } from "./Layer";
+import { Configuration } from "./settings/Configuration";
 
 export function App() {
+  const { settings, changeSettings } = useSettings();
+  const [originPreference, setOriginPreference] =
+    useState<OriginPreference>("profile");
   const [devices, setDevices] = useState<HIDDevice[]>([]);
   const [selectedDevice, setSelectedDevice] = useState(-1);
   const [keyboardDevice, setKeyboardDevice] = useState<KeyboardDevice>({
     keyboard: NoopKeyboard,
   });
-  const [selectedLayout, setSelectedLayout] = useState<KeyLayout>({
-    rows: 0,
-    columns: 0,
+  const [profiles, setProfiles] = useState<KeyboardProfile[]>(() =>
+    loadProfiles()
+  );
+  const [selectedLayout, setSelectedLayout] = useState<KeyLayout>(() => {
+    const defaultProfile = profiles.find(
+      p => p.name.toLowerCase() === "default"
+    );
+    return defaultProfile ? defaultProfile.layout : { rows: 0, columns: 0 };
   });
-  const [profiles, setProfiles] = useState<KeyboardProfile[]>(loadProfiles());
   const [selectedProfile, setSelectedProfile] = useState<
     KeyboardProfile | undefined
-  >();
+  >(() => profiles.find(p => p.name.toLowerCase() === "default"));
+  const profileBindings = selectedProfile?.bindingsByLayer ?? [];
 
   const currentDevice = useMemo(
     () => (selectedDevice >= 0 ? devices[selectedDevice] : undefined),
     [devices, selectedDevice]
   );
-  const { keyBindings, readConfiguration, keyboardDeviceType, busy, errors } =
-    useKeyboardDevice(keyboardDevice);
+  const {
+    keyBindings,
+    readConfiguration,
+    keyboardDeviceType,
+    busy,
+    errors,
+    writeKeyBindings,
+  } = useKeyboardDevice(keyboardDevice);
+
+  const [editedBindings, setEditedBindings] = useState<KeyBinding[]>([]);
 
   const bindingsByLayer = React.useMemo(() => {
     const layers: KeyBinding[][] = Array(keyboardDeviceType.layers)
       .fill(null)
       .map(() => []);
 
-    for (const binding of keyBindings) {
-      while (binding.layer >= layers.length) {
-        layers.push([]);
+    const bindingByPriority =
+      originPreference === "profile"
+        ? [profileBindings.flat(), keyBindings]
+        : [keyBindings, profileBindings.flat()];
+    for (const bindingSet of bindingByPriority) {
+      for (const binding of bindingSet) {
+        while (binding.layer >= layers.length) {
+          layers.push([]);
+        }
+        const layer = layers[binding.layer]!;
+        if (!layer.some(({ key }) => keysAreEqual(key, binding.key))) {
+          layers[binding.layer]!.push(binding);
+        }
       }
-      layers[binding.layer]!.push(binding);
+    }
+    for (const edited of editedBindings) {
+      const layer = layers[edited.layer];
+      if (!layer) {
+        continue;
+      }
+      const index = layer.findIndex(({ key }) => keysAreEqual(key, edited.key));
+      if (index < 0) {
+        layer.push(edited);
+      } else {
+        layer[index] = edited;
+      }
     }
     for (const layer of layers) {
       layer.sort((a, b) => keysCompare(a.key, b.key));
     }
     return layers;
-  }, [keyBindings, keyboardDeviceType.layers]);
+  }, [
+    keyBindings,
+    keyboardDeviceType.layers,
+    editedBindings,
+    profileBindings,
+    originPreference,
+  ]);
 
   const addProfile = useCallback(
     (name: string) => {
@@ -87,8 +134,21 @@ export function App() {
         bindingsByLayer: JSON.parse(JSON.stringify(bindingsByLayer)),
       };
 
-      setProfiles(prev => [...prev, profile]);
+      forceOriginsToProfile(profile.bindingsByLayer);
+
+      setProfiles(prev => {
+        const updated = [...prev];
+        const index = updated.findIndex(p => p.name === name);
+        if (index < 0) {
+          updated.push(profile);
+        } else {
+          updated[index] = profile;
+        }
+        return updated;
+      });
       setSelectedProfile(profile);
+      setOriginPreference("profile");
+      setEditedBindings([]);
     },
     [currentDevice, selectedLayout, keyboardDeviceType, bindingsByLayer]
   );
@@ -201,7 +261,7 @@ export function App() {
     []
   );
 
-  const currentBinding = React.useMemo(() => {
+  const currentBinding = useMemo(() => {
     if (selectedBinding.key === -1 || selectedBinding.layer === -1) {
       return;
     }
@@ -212,15 +272,46 @@ export function App() {
       keysAreEqual(binding.key, selectedBinding.key)
     );
   }, [bindingsByLayer, selectedBinding]);
+  const [workingMacro, setWorkingMacro] = useState<Macro | undefined>();
+  const commitWorkingMacro = useCallback(() => {
+    if (!workingMacro || !currentBinding) {
+      return;
+    }
+    const updated = [...editedBindings];
+    const index = updated.findIndex(
+      ({ key, layer }) =>
+        currentBinding.layer === layer && keysAreEqual(currentBinding.key, key)
+    );
+    if (index < 0) {
+      updated.push({
+        ...currentBinding,
+        expansion: workingMacro,
+        origin: "editor",
+      });
+    } else {
+      updated[index] = {
+        ...currentBinding,
+        expansion: workingMacro,
+        origin: "editor",
+      };
+    }
+    setEditedBindings(updated);
+    setWorkingMacro(undefined);
+  }, [workingMacro, currentBinding, bindingsByLayer, editedBindings]);
 
   const selectProfile = useCallback((profile: KeyboardProfile) => {
+    setOriginPreference("profile");
     setSelectedLayout({ ...profile.layout });
     setSelectedProfile(profile);
   }, []);
 
+  const onClearLayerEdits = useCallback((layer: number) => {
+    setEditedBindings(prev => prev.filter(binding => binding.layer !== layer));
+  }, []);
+
   return (
     <KeyboardLayoutProvider>
-      <div className="flex min-h-screen flex-row gap-2 bg-neutral-100">
+      <div className="text-default flex max-h-screen min-h-screen flex-row gap-2 overflow-hidden bg-neutral-100 dark:bg-neutral-800 dark:text-white">
         <Configuration
           devices={devices}
           selectedDevice={devices[selectedDevice]}
@@ -232,15 +323,30 @@ export function App() {
           selectedLayout={selectedLayout}
           onSelectLayout={update => setSelectedLayout(update)}
           keyboardDeviceType={keyboardDeviceType}
-          canReadConfiguration={currentDevice !== undefined && !busy}
-          onReadConfiguration={readConfiguration}
+          canReadWriteConfiguration={currentDevice !== undefined && !busy}
+          onReadConfiguration={() => {
+            setOriginPreference("device");
+            readConfiguration();
+          }}
+          onWriteConfiguration={() => {
+            writeKeyBindings(bindingsByLayer.flat())
+              .then(succeeded => {
+                if (succeeded) {
+                  setEditedBindings([]);
+                  readConfiguration();
+                }
+              })
+              .catch(error => console.error(error));
+          }}
           profiles={profiles}
           selectedProfile={selectedProfile}
           onSelectProfile={selectProfile}
           onChangeProfiles={setProfiles}
           onAddProfile={addProfile}
+          settings={settings}
+          onChangeSettings={changeSettings}
         />
-        <div className="flex flex-1 flex-col items-center gap-4">
+        <div className="flex flex-1 flex-col items-center gap-4 overflow-y-scroll">
           <div className="flex flex-col gap-2">
             <H1 className="m-4">ch57x Keyboard Programmer</H1>
             <TabGroup className="flex flex-row gap-2" defaultIndex={0} vertical>
@@ -248,19 +354,31 @@ export function App() {
                 {({ selectedIndex }) => {
                   return (
                     <>
-                      {bindingsByLayer.map((_, layer) => (
-                        <Tab
-                          key={layer}
-                          className={twJoin(
-                            "rounded-md border border-neutral-300 px-3 py-1 hover:border-neutral-500",
-                            selectedIndex === layer
-                              ? "bg-indigo-100"
-                              : "bg-white"
-                          )}
-                        >
-                          Layer {layer + 1}
-                        </Tab>
-                      ))}
+                      {bindingsByLayer.map((_, layer) => {
+                        const isDirty = editedBindings.some(
+                          b => b.layer === layer
+                        );
+                        return (
+                          <Tab
+                            key={layer}
+                            className={twJoin(
+                              "flex flex-row items-start rounded-md border px-3 py-1",
+                              "border-neutral-300 hover:border-neutral-500",
+                              "dark:border-neutral-600 dark:hover:border-neutral-400",
+                              selectedIndex === layer
+                                ? "bg-indigo-100 dark:bg-indigo-800"
+                                : "bg-white dark:bg-neutral-900"
+                            )}
+                          >
+                            <Text>Layer {layer + 1}</Text>
+                            {isDirty ? (
+                              <Asterisk className="size-3 text-red-500" />
+                            ) : (
+                              <div className="size-3" />
+                            )}
+                          </Tab>
+                        );
+                      })}
                     </>
                   );
                 }}
@@ -270,7 +388,7 @@ export function App() {
                   {bindingsByLayer.map((bindings, layer) => (
                     <TabPanel
                       key={layer}
-                      className="rounded-lg border border-transparent bg-white p-4 shadow-xl"
+                      className="rounded-lg border border-transparent bg-white p-4 shadow-xl dark:bg-neutral-900"
                     >
                       <Layer
                         layer={layer}
@@ -279,16 +397,20 @@ export function App() {
                         selectedBinding={selectedBinding}
                         onSelectBinding={selectBinding}
                         keyLayout={selectedLayout}
+                        originPreference={originPreference}
+                        onChangeOriginPreference={setOriginPreference}
+                        onClearLayerEdits={onClearLayerEdits}
                       />
                     </TabPanel>
                   ))}
                 </TabPanels>
                 {bindingsByLayer.length > 0 && (
-                  <div className="rounded-lg border border-transparent bg-white p-4 shadow-xl">
+                  <div className="rounded-lg border border-transparent bg-white p-4 shadow-xl dark:bg-neutral-900">
                     <EditKey
                       initialBinding={currentBinding}
-                      updatedMacro={undefined}
-                      onChange={() => {}}
+                      updatedMacro={workingMacro}
+                      onChange={setWorkingMacro}
+                      onCommit={commitWorkingMacro}
                     />
                   </div>
                 )}

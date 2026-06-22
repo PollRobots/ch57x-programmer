@@ -1,11 +1,18 @@
-import { MousePointerClick, RotateCcw, RotateCw } from "lucide-react";
-import React from "react";
+import { MousePointerClick, RotateCcw, RotateCw, Trash2 } from "lucide-react";
+import React, { useMemo } from "react";
 
-import { KeyBinding, KeyboardDeviceType, keysAreEqual } from "@model/keyboard";
-import { H3 } from "@ux/Typography";
+import {
+  KeyBinding,
+  KeyBindingOrigin,
+  KeyboardDeviceType,
+  keysAreEqual,
+} from "@model/keyboard";
+import { Button } from "@ux/Button";
+import { SimpleRadio } from "@ux/SimpleRadio";
+import { H3, Text } from "@ux/Typography";
 
-import { KeyLayout } from "./Configuration";
 import { KeyboardKey } from "./KeyboardKey";
+import { KeyLayout } from "./settings/SelectLayout";
 
 export type LayerProps = {
   layer: number;
@@ -14,7 +21,19 @@ export type LayerProps = {
   keyboardDeviceType: KeyboardDeviceType;
   selectedBinding: Pick<KeyBinding, "key" | "layer">;
   onSelectBinding: (binding: Pick<KeyBinding, "key" | "layer">) => void;
+  originPreference: OriginPreference;
+  onChangeOriginPreference: (update: OriginPreference) => void;
+  onClearLayerEdits: (layer: number) => void;
 };
+
+export type OriginPreference =
+  | Extract<KeyBindingOrigin, "device" | "profile">
+  | "none";
+
+const ORIGIN_OPTIONS: { value: OriginPreference; label: string }[] = [
+  { value: "device", label: "Keyboard" },
+  { value: "profile", label: "Profile" },
+];
 
 export function Layer({
   layer,
@@ -23,10 +42,45 @@ export function Layer({
   keyboardDeviceType,
   onSelectBinding,
   selectedBinding,
+  originPreference,
+  onChangeOriginPreference,
+  onClearLayerEdits,
 }: LayerProps) {
+  const edits = useMemo(
+    () => keyBindings.reduce((a, b) => a + (b.origin === "editor" ? 1 : 0), 0),
+    [keyBindings]
+  );
   return (
     <div className="flex flex-col gap-4">
-      <H3>Layer {layer + 1}</H3>
+      <div className="flex flex-row items-center gap-4">
+        <H3>Layer {layer + 1}</H3>
+        {edits > 0 && (
+          <>
+            <Text size="sm" className="text-red-700 dark:text-red-500">
+              {edits === 1 ? "1 key edited" : `${edits} keys edited`}
+            </Text>
+            <Button
+              size="sm"
+              className="flex flex-row items-center gap-2"
+              onClick={() => onClearLayerEdits(layer)}
+            >
+              <Trash2 className="size-3" />
+              <Text size="sm">Clear</Text>
+            </Button>
+          </>
+        )}
+        <SimpleRadio
+          value={
+            ORIGIN_OPTIONS.find(({ value }) => value === originPreference) ?? {
+              value: originPreference,
+              label: originPreference,
+            }
+          }
+          options={ORIGIN_OPTIONS}
+          onChange={update => onChangeOriginPreference(update.value)}
+          className="ml-auto"
+        />
+      </div>
       <div className="mt-2 flex flex-row gap-8">
         <div
           className="grid gap-2"
@@ -56,9 +110,9 @@ export function Layer({
         </div>
         <div className="grid grid-cols-3 gap-2">
           {}
-          <RotateCcw className="text-tertiary justify-self-center" />
-          <MousePointerClick className="text-tertiary justify-self-center" />
-          <RotateCw className="text-tertiary justify-self-center" />
+          <RotateCcw className="text-tertiary justify-self-center dark:text-white" />
+          <MousePointerClick className="text-tertiary justify-self-center dark:text-white" />
+          <RotateCw className="text-tertiary justify-self-center dark:text-white" />
           {Array(keyboardDeviceType.encoders)
             .fill(null)
             .flatMap((_, i) => {
