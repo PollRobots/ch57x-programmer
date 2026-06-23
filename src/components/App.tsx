@@ -435,11 +435,7 @@ export function App() {
                 <Button
                   className="flex w-24 items-center justify-around gap-2"
                   description="Read the current key-bindings from the selected device"
-                  onClick={() => {
-                    ///onReadConfiguration;
-                    console.error("about to throw");
-                    throw new Error("oopsies");
-                  }}
+                  onClick={onReadConfiguration}
                 >
                   <HardDriveUpload className="size-6" />
                   <Text size="sm">Read</Text>
