@@ -1,5 +1,6 @@
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import { Asterisk } from "lucide-react";
+import { cva } from "class-variance-authority";
+import { Asterisk, HardDriveDownload, HardDriveUpload } from "lucide-react";
 import React, {
   useCallback,
   useEffect,
@@ -7,9 +8,9 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { twJoin } from "tailwind-merge";
 import { useEventListener } from "usehooks-ts";
 
+import { HidChange, useHidChange } from "@hooks/useHidChange";
 import {
   KeyBinding,
   keysAreEqual,
@@ -28,12 +29,31 @@ import {
 import { scanForKeyboard } from "@model/usb";
 import { KeyboardDevice, useKeyboardDevice } from "@model/useKeyboardDevice";
 import { KeyboardLayoutProvider } from "@model/useKeyboardLayout";
+import { Button } from "@ux/Button";
 import { H1, H2, Text } from "@ux/Typography";
 
-import { EditKey } from "./EditKey";
+import { EditKey } from "./editors/EditKey";
 import { useSettings } from "./hooks/useSettings";
 import { Layer, OriginPreference } from "./Layer";
+import { LayoutIcon } from "./LayoutIcon";
 import { Configuration } from "./settings/Configuration";
+import { Unsupported } from "./Unsupported";
+
+const layertab = cva(
+  [
+    "flex flex-row items-start rounded-md border px-3 py-1",
+    "border-neutral-300 hover:border-neutral-500",
+    "dark:border-neutral-600 dark:hover:border-neutral-400",
+  ],
+  {
+    variants: {
+      selected: {
+        true: "bg-indigo-500/30",
+        false: "bg-white dark:bg-neutral-900",
+      },
+    },
+  }
+);
 
 export function App() {
   const { settings, changeSettings } = useSettings();
@@ -156,6 +176,8 @@ export function App() {
   const onVisibilityChange = useCallback(() => {
     if (document.hidden) {
       saveProfiles(profiles);
+    } else {
+      scan(false);
     }
   }, [profiles]);
 
@@ -199,8 +221,10 @@ export function App() {
       scanForKeyboard(force)
         .then(devices => {
           setDevices(devices);
-          if (
-            (devices.length > 0 && selectedDevice === -1) ||
+          if (devices.length == 0) {
+            setSelectedDevice(-1);
+          } else if (
+            selectedDevice === -1 ||
             selectedDevice >= devices.length
           ) {
             setSelectedDevice(0);
@@ -219,6 +243,17 @@ export function App() {
       scan(false);
     }
   }, [started, scan]);
+
+  const onHidCHange = useCallback(
+    (change: HidChange) => {
+      if (change === "Connected" || change === "Disconnected") {
+        scan(false);
+      }
+    },
+    [scan]
+  );
+
+  const hidChange = useHidChange(onHidCHange);
 
   const layouts = useMemo<{ rows: number; columns: number }[]>(() => {
     const buttons = keyboardDeviceType.buttons;
@@ -299,15 +334,42 @@ export function App() {
     setWorkingMacro(undefined);
   }, [workingMacro, currentBinding, bindingsByLayer, editedBindings]);
 
-  const selectProfile = useCallback((profile: KeyboardProfile) => {
-    setOriginPreference("profile");
-    setSelectedLayout({ ...profile.layout });
+  const selectProfile = useCallback((profile: KeyboardProfile | undefined) => {
+    if (profile) {
+      setOriginPreference("profile");
+      setSelectedLayout({ ...profile.layout });
+    }
     setSelectedProfile(profile);
   }, []);
 
   const onClearLayerEdits = useCallback((layer: number) => {
     setEditedBindings(prev => prev.filter(binding => binding.layer !== layer));
   }, []);
+
+  if (hidChange === "NotSupported") {
+    return <Unsupported />;
+  }
+
+  const onReadConfiguration = useCallback(() => {
+    setOriginPreference("device");
+    readConfiguration();
+  }, [readConfiguration]);
+  const [writing, setWriting] = useState(false);
+  const onWriteConfiguration = useCallback(() => {
+    if (writing) {
+      return;
+    }
+    setWriting(true);
+    writeKeyBindings(bindingsByLayer.flat())
+      .then(succeeded => {
+        if (succeeded) {
+          setEditedBindings([]);
+          readConfiguration();
+        }
+      })
+      .catch(error => console.error(error))
+      .finally(() => setWriting(false));
+  }, [writing, writeKeyBindings]);
 
   return (
     <KeyboardLayoutProvider>
@@ -324,20 +386,8 @@ export function App() {
           onSelectLayout={update => setSelectedLayout(update)}
           keyboardDeviceType={keyboardDeviceType}
           canReadWriteConfiguration={currentDevice !== undefined && !busy}
-          onReadConfiguration={() => {
-            setOriginPreference("device");
-            readConfiguration();
-          }}
-          onWriteConfiguration={() => {
-            writeKeyBindings(bindingsByLayer.flat())
-              .then(succeeded => {
-                if (succeeded) {
-                  setEditedBindings([]);
-                  readConfiguration();
-                }
-              })
-              .catch(error => console.error(error));
-          }}
+          onReadConfiguration={onReadConfiguration}
+          onWriteConfiguration={onWriteConfiguration}
           profiles={profiles}
           selectedProfile={selectedProfile}
           onSelectProfile={selectProfile}
@@ -348,41 +398,58 @@ export function App() {
         />
         <div className="flex flex-1 flex-col items-center gap-4 overflow-y-scroll">
           <div className="flex flex-col gap-2">
-            <H1 className="m-4">ch57x Keyboard Programmer</H1>
+            <H1 className="m-4 inline-flex items-center gap-2">
+              <LayoutIcon rows={3} columns={4} encoders={2} />
+              ch57x keyboard tool
+            </H1>
             <TabGroup className="flex flex-row gap-2" defaultIndex={0} vertical>
-              <TabList className="flex flex-col gap-1">
-                {({ selectedIndex }) => {
-                  return (
-                    <>
-                      {bindingsByLayer.map((_, layer) => {
-                        const isDirty = editedBindings.some(
-                          b => b.layer === layer
-                        );
-                        return (
-                          <Tab
-                            key={layer}
-                            className={twJoin(
-                              "flex flex-row items-start rounded-md border px-3 py-1",
-                              "border-neutral-300 hover:border-neutral-500",
-                              "dark:border-neutral-600 dark:hover:border-neutral-400",
-                              selectedIndex === layer
-                                ? "bg-indigo-100 dark:bg-indigo-800"
-                                : "bg-white dark:bg-neutral-900"
-                            )}
-                          >
-                            <Text>Layer {layer + 1}</Text>
-                            {isDirty ? (
-                              <Asterisk className="size-3 text-red-500" />
-                            ) : (
-                              <div className="size-3" />
-                            )}
-                          </Tab>
-                        );
-                      })}
-                    </>
-                  );
-                }}
-              </TabList>
+              <div className="flex flex-col gap-4">
+                <TabList className="flex flex-col gap-1">
+                  {({ selectedIndex }) => {
+                    return (
+                      <>
+                        {bindingsByLayer.map((_, layer) => {
+                          const isDirty = editedBindings.some(
+                            b => b.layer === layer
+                          );
+                          return (
+                            <Tab
+                              key={layer}
+                              className={layertab({
+                                selected: selectedIndex === layer,
+                              })}
+                            >
+                              <Text>Layer {layer + 1}</Text>
+                              {isDirty ? (
+                                <Asterisk className="size-3 text-red-500" />
+                              ) : (
+                                <div className="size-3" />
+                              )}
+                            </Tab>
+                          );
+                        })}
+                      </>
+                    );
+                  }}
+                </TabList>
+                <Button
+                  className="flex w-24 items-center justify-around gap-2"
+                  description="Read the current key-bindings from the selected device"
+                  onClick={onReadConfiguration}
+                >
+                  <HardDriveUpload className="size-6" />
+                  <Text size="sm">Read</Text>
+                </Button>
+                <Button
+                  disabled={writing}
+                  onClick={onWriteConfiguration}
+                  className="flex size-24 flex-col items-center justify-around gap-2"
+                  description="Write the current key-bindings to the selected device"
+                >
+                  <HardDriveDownload className="size-8" />
+                  <Text size="sm">Write</Text>
+                </Button>
+              </div>
               <div className="flex flex-col gap-4">
                 <TabPanels>
                   {bindingsByLayer.map((bindings, layer) => (
@@ -400,6 +467,8 @@ export function App() {
                         originPreference={originPreference}
                         onChangeOriginPreference={setOriginPreference}
                         onClearLayerEdits={onClearLayerEdits}
+                        haveProfile={selectedProfile !== undefined}
+                        profileName={selectedProfile?.name ?? ""}
                       />
                     </TabPanel>
                   ))}

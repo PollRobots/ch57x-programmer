@@ -4,7 +4,10 @@ import {
   ArrowUp01,
   ArrowUpAZ,
   ChevronsUpDown,
+  Hand,
   Lock,
+  Mouse,
+  MousePointerClick,
   MoveDown,
   MoveLeft,
   MoveRight,
@@ -33,6 +36,8 @@ import {
   Macro,
   modifiersToCanonical,
   modifiersToString,
+  MouseAction,
+  MouseModifier,
 } from "@model/keyboard";
 import { useKeyboardLayout } from "@model/useKeyboardLayout";
 import { Text } from "@ux/Typography";
@@ -49,7 +54,9 @@ export function DisplayKeyBinding({ macro }: DisplayKeyBindingProps) {
       {isKeyboardEvent(macro) && (
         <DisplayKeyboardMacro keyChords={macro.keyChords} />
       )}
-      {isMouseEvent(macro) && <DisplayMouseMacro />}
+      {isMouseEvent(macro) && (
+        <DisplayMouseMacro action={macro.action} modifier={macro.modifier} />
+      )}
       {isMediaEvent(macro) && <MediaKey size="sm" code={macro.mediaCode} />}
     </>
   );
@@ -106,8 +113,22 @@ export function DisplayKeyChord({ modifiers, code }: KeyChord) {
   );
 }
 
-function DisplayMouseMacro() {
-  return "mouse";
+type DisplayMouseMacroProps = {
+  action: MouseAction;
+  modifier: MouseModifier | undefined;
+};
+
+function DisplayMouseMacro({ action, modifier }: DisplayMouseMacroProps) {
+  return (
+    <div className="flex flex-row gap-1">
+      {modifier && <Text size="xs">{modifier}</Text>}
+      {action.type === "Click" && <MousePointerClick className="size-4" />}
+      {(action.type === "Drag" || action.type === "Move") && (
+        <Hand className="size-4" />
+      )}
+      {action.type === "Wheel" && <Mouse className="size-4" />}
+    </div>
+  );
 }
 
 type KeyCodeProps = {

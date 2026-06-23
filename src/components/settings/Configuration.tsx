@@ -75,7 +75,7 @@ function OpenConfiguration({
           onClick={onReadConfiguration}
           disabled={!canReadWriteConfiguration}
           size="lg"
-          description="Reads the current key-bindings from the selected device."
+          description="Read the current key-bindings from the selected device"
         >
           <HardDriveUpload />
           <Text>Read key-bindings</Text>
@@ -85,7 +85,7 @@ function OpenConfiguration({
           onClick={onWriteConfiguration}
           disabled={!canReadWriteConfiguration}
           size="lg"
-          description="Writes the current key-bindings to the selected device."
+          description="Write the current key-bindings to the selected device"
         >
           <HardDriveDownload />
           <Text>Write key-bindings</Text>

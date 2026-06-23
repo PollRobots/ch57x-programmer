@@ -5,8 +5,8 @@ const TerserPlugin = require("terser-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 
-const PROJECT = "mini-keyboard";
-const PAGE_TITLE = "Mini Keyboard";
+const PROJECT = "cheese-tax";
+const PAGE_TITLE = "ch57x keyboard tool";
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === "production";

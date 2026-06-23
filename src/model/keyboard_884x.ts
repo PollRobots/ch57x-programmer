@@ -14,7 +14,9 @@ import {
   MediaCodeValues,
   modifiersFromValue,
   modifiersValue,
+  mouseButtonsFromValue,
   mouseButtonsValue,
+  mouseModifierFromValue,
   mouseModifierValue,
   UNKNOWN_KEYBOARD_DEVICE,
 } from "./keyboard";
@@ -265,8 +267,8 @@ export function makeKeyboard884(): Keyboard {
                 0x05,
                 modifierValue,
                 0,
-                mouseAction.x,
-                mouseAction.y
+                signedByteToUnsigned(mouseAction.x),
+                signedByteToUnsigned(mouseAction.y)
               );
               break;
 
@@ -275,8 +277,8 @@ export function makeKeyboard884(): Keyboard {
                 0x05,
                 modifierValue,
                 mouseButtonsValue(mouseAction.buttons),
-                mouseAction.x,
-                mouseAction.y
+                signedByteToUnsigned(mouseAction.x),
+                signedByteToUnsigned(mouseAction.y)
               );
               break;
 
@@ -289,7 +291,14 @@ export function makeKeyboard884(): Keyboard {
               break;
 
             case "Wheel":
-              message.push(0x03, modifierValue, 0, 0, 0, mouseAction.delta);
+              message.push(
+                0x03,
+                modifierValue,
+                0,
+                0,
+                0,
+                signedByteToUnsigned(mouseAction.delta)
+              );
               break;
           }
           break;
@@ -442,10 +451,67 @@ export function makeKeyboard884(): Keyboard {
           break;
         }
         case "Mouse":
-          break;
+          if (data[9] !== 4) {
+            return;
+          }
+
+          // click, move, or drag
+          const modifier = mouseModifierFromValue(data[10]);
+          const buttons = mouseButtonsFromValue(data[11]);
+          const x = unsignedByteToSigned(data[12] ?? 0);
+          const y = unsignedByteToSigned(data[13] ?? 0);
+          const delta = unsignedByteToSigned(data[14] ?? 0);
+
+          return {
+            layer,
+            key,
+            expansion: {
+              type: "Mouse",
+              action: {
+                ...(x === 0 && y === 0 && delta !== 0
+                  ? { type: "Wheel", delta }
+                  : x === 0 && y === 0
+                    ? { type: "Click", buttons }
+                    : buttons.length > 0
+                      ? {
+                          type: "Drag",
+                          buttons,
+                          x,
+                          y,
+                        }
+                      : {
+                          type: "Move",
+                          x,
+                          y,
+                        }),
+              },
+              modifier,
+            },
+            origin: "device",
+          };
       }
 
       return;
     },
   };
+}
+
+function signedByteToUnsigned(signed: number): number {
+  if (signed <= -128) {
+    return 128;
+  }
+  if (signed >= 127) {
+    return 127;
+  }
+  if (signed > 0) {
+    return signed;
+  }
+  return 256 + signed;
+}
+
+function unsignedByteToSigned(unsigned: number): number {
+  if (unsigned <= 127) {
+    return unsigned;
+  }
+  return unsigned - 256;
 }

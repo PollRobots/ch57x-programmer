@@ -390,6 +390,21 @@ export function mouseModifierValue(
   }
 }
 
+export function mouseModifierFromValue(
+  value: number | undefined
+): MouseModifier | undefined {
+  switch (value) {
+    case 1:
+      return "Ctrl";
+    case 2:
+      return "Shift";
+    case 3:
+      return "Alt";
+    default:
+      return;
+  }
+}
+
 const MOUSE_BUTTON = ["Left", "Right", "Middle"] as const;
 export type MouseButton = (typeof MOUSE_BUTTON)[number];
 
@@ -421,6 +436,24 @@ export function mouseButtonsValue(buttons: MouseButton[]): number {
     (accumulator, button) => accumulator | mouseButtonValue(button),
     0
   );
+}
+export function mouseButtonsFromValue(
+  value: number | undefined
+): MouseButton[] {
+  const buttons: MouseButton[] = [];
+  if (value) {
+    if ((value & 1) === 1) {
+      buttons.push("Left");
+    }
+    if ((value & 2) === 2) {
+      buttons.push("Left");
+    }
+    if ((value & 4) === 4) {
+      buttons.push("Left");
+    }
+  }
+
+  return buttons;
 }
 
 function mouseButtonsAreEqual(a: MouseButton[], b: MouseButton[]): boolean {

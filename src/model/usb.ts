@@ -19,9 +19,6 @@ export async function scanForKeyboard(force: boolean = false) {
     return [];
   } else {
     const devices = await getOrRequestDevices(force);
-    if (devices.length === 0) {
-      console.warn("No usb devices found");
-    }
     return devices.filter(device => {
       return device.collections.some(
         collection =>

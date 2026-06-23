@@ -1,16 +1,7 @@
-import {
-  Radio,
-  RadioGroup,
-  Tab,
-  TabGroup,
-  TabList,
-  TabPanel,
-  TabPanels,
-} from "@headlessui/react";
+import { Radio, RadioGroup } from "@headlessui/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Minus, Plus, Save } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
-import { twJoin } from "tailwind-merge";
 
 import {
   isFunctionKey,
@@ -19,162 +10,17 @@ import {
   WellKnownCode,
   wellKnownCodeValue,
 } from "@model/key_codes";
-import {
-  isModifier,
-  KeyBinding,
-  KeyChord,
-  Macro,
-  MEDIA_CODE,
-  MediaCode,
-  Modifier,
-} from "@model/keyboard";
+import { isModifier, KeyChord, Modifier } from "@model/keyboard";
 import { useKeyboardLayout } from "@model/useKeyboardLayout";
 import { Button } from "@ux/Button";
 import { Expando } from "@ux/Expando";
 import { Tooltip } from "@ux/Tooltip";
-import { H3, H4, Text } from "@ux/Typography";
+import { H4, Text } from "@ux/Typography";
 
-import { DisplayKeyBinding, DisplayKeyChord } from "./DisplayKeyBinding";
-import { KeyCode } from "./KeyCode";
-import { MediaKey } from "./MediaKey";
+import { DisplayKeyChord } from "../DisplayKeyBinding";
+import { KeyCode } from "../KeyCode";
 
-export type EditKeyProps = {
-  initialBinding: KeyBinding | undefined;
-  updatedMacro: Macro | undefined;
-  onChange: (updatedMacro: Macro | undefined) => void;
-  onCommit: () => void;
-};
-
-export function EditKey({
-  initialBinding,
-  updatedMacro,
-  onChange,
-  onCommit,
-}: EditKeyProps) {
-  const workingMacro = React.useMemo<Macro>(() => {
-    if (updatedMacro) {
-      return updatedMacro;
-    }
-    if (initialBinding) {
-      return initialBinding.expansion;
-    }
-    return {
-      type: "Keyboard",
-      options: {
-        delay: 0,
-      },
-      keyChords: [],
-    };
-  }, [updatedMacro, initialBinding]);
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-row items-baseline gap-2">
-        <H3>Edit binding</H3>
-        <div className="flex-1" />
-        <Text strong>Current binding:</Text>
-        {initialBinding ? (
-          <DisplayKeyBinding macro={initialBinding.expansion} />
-        ) : (
-          "None"
-        )}
-      </div>
-      <MacroEditor
-        macro={workingMacro}
-        onChange={onChange}
-        edited={
-          updatedMacro !== undefined || initialBinding?.origin === "editor"
-        }
-        onCommit={onCommit}
-      />
-    </div>
-  );
-}
-
-type MacroEditorProps = {
-  macro: Macro;
-  onChange: (update: Macro) => void;
-  edited: boolean;
-  onCommit: () => void;
-};
-
-const MACRO_TYPES = ["Keyboard", "Media", "Mouse"];
-
-const macrotab = cva("px-2 py-1 border", {
-  variants: {
-    selected: {
-      true: [
-        "border-b-transparent bg-neutral-50 dark:bg-neutral-800",
-        "border-t-neutral-300 border-r-neutral-300 border-l-neutral-300",
-        "dark:border-t-neutral-600 dark:border-r-neutral-600 dark:border-l-neutral-600",
-      ],
-      false: [
-        "border-t-transparent border-r-transparent border-l-transparent",
-        "border-b-neutral-300 dark:border-b-neutral-600",
-      ],
-    },
-  },
-});
-
-function MacroEditor({ macro, onChange, edited, onCommit }: MacroEditorProps) {
-  return (
-    <TabGroup defaultIndex={MACRO_TYPES.indexOf(macro.type)}>
-      <TabList className="flex flex-row">
-        {({ selectedIndex }) => (
-          <>
-            {MACRO_TYPES.map((label, i) => (
-              <Tab
-                key={i}
-                className={macrotab({ selected: selectedIndex === i })}
-              >
-                <Text size="lg"> {label} </Text>
-              </Tab>
-            ))}
-            <div className="flex-1 border-b border-b-neutral-300 dark:border-b-neutral-600" />
-          </>
-        )}
-      </TabList>
-      <TabPanels
-        className={twJoin(
-          "border-r border-b border-l shadow-md",
-          "border-neutral-300 bg-neutral-50",
-          "dark:border-neutral-600 dark:bg-neutral-800"
-        )}
-      >
-        <TabPanel>
-          <KeyboardEditor
-            keyChords={macro.type === "Keyboard" ? macro.keyChords : []}
-            onUpdatedKeyChords={update =>
-              onChange({
-                type: "Keyboard",
-                options: { delay: 0 },
-                keyChords: update,
-              })
-            }
-            edited={edited}
-            commit={onCommit}
-          />
-        </TabPanel>
-        <TabPanel>
-          <MediaEditor
-            mediaCode={macro.type === "Media" ? macro.mediaCode : undefined}
-            onUpdatedMediaCode={update =>
-              onChange({
-                type: "Media",
-                mediaCode: update,
-              })
-            }
-            edited={edited}
-            commit={onCommit}
-          />
-        </TabPanel>
-        <TabPanel>Mouse</TabPanel>
-      </TabPanels>
-    </TabGroup>
-  );
-}
-
-type KeyboardEditorProps = {
+export type KeyboardEditorProps = {
   keyChords: KeyChord[];
   onUpdatedKeyChords: (update: KeyChord[]) => void;
   edited: boolean;
@@ -210,7 +56,7 @@ const sequencekey = cva(
   }
 );
 
-const editkey = cva(
+export const editkey = cva(
   [
     "text-secondary hover:text-default",
     "dark:text-white dark:hover:text-white",
@@ -223,7 +69,7 @@ const editkey = cva(
   }
 );
 
-function KeyboardEditor({
+export function KeyboardEditor({
   keyChords,
   onUpdatedKeyChords,
   commit,
@@ -275,7 +121,7 @@ function KeyboardEditor({
   }, [keyChords, selectedKey, onUpdatedKeyChords]);
 
   return (
-    <div className="flex flex-col gap-2 p-2">
+    <div className="flex min-w-[46rem] flex-col gap-2 p-2">
       <Text strong>Key sequence</Text>
       <Text
         size="sm"
@@ -368,14 +214,14 @@ type KeyboardSectionProps = {
   onClick: (code: WellKnownCode | Modifier) => void;
 };
 
-const displayKey = cva("", {
+export const displayKey = cva("", {
   variants: {
     selectedCode: {
-      true: "bg-amber-200 dark:bg-amber-700",
+      true: "bg-amber-500/30",
       false: null,
     },
     selectedModifier: {
-      true: "bg-violet-200 dark:bg-violet-700",
+      true: "bg-violet-500/30",
       false: null,
     },
   },
@@ -390,15 +236,15 @@ function AlNumKeys({ selectedChord, onClick }: KeyboardSectionProps) {
           <div key={i} className="flex flex-row justify-between gap-1">
             {row.map((code, j) => {
               if (code === "gap") {
-                return <div />;
+                return <div key={`${i}.${j}`} />;
               }
               return (
                 <button
+                  key={code}
                   className={CUSTOM_WIDTHS.get(`${j},${i}`)}
                   onClick={() => onClick(code)}
                 >
                   <KeyCode
-                    key={code}
                     code={code}
                     className={displayKey({
                       selectedCode: selectedChord?.code === code,
@@ -451,7 +297,7 @@ type NumPadKeyDef = {
 const NUMPAD_KEYS: NumPadKeyDef[] = [
   {code: "NumLock"}, {code: "NumPadSlash"}, {code: "NumPadAsterisk"}, {code: "NumPadMinus"},
   {code: "NumPad7"}, {code: "NumPad8"}, {code: "NumPad9"}, {code: "NumPadPlus", tall: true},
-  {code: "NumPad4"}, {code: "NumPad5"}, {code: "NumPad6"}, 
+  {code: "NumPad4"}, {code: "NumPad5"}, {code: "NumPad6"},
   {code: "NumPad1"}, {code: "NumPad2"}, {code: "NumPad3"}, {code: "NumPadEnter", tall: true},
   {code: "NumPad0", wide: true}, {code: "NumPadDot"},
 ];
@@ -614,68 +460,5 @@ function AllKeys({ selectedChord, onClick }: KeyboardSectionProps) {
         </div>
       }
     />
-  );
-}
-
-type MediaEditorProps = {
-  mediaCode: MediaCode | undefined;
-  onUpdatedMediaCode: (update: MediaCode) => void;
-  edited: boolean;
-  commit: () => void;
-};
-
-function MediaEditor({
-  mediaCode,
-  onUpdatedMediaCode,
-  edited,
-  commit,
-}: MediaEditorProps) {
-  return (
-    <div className="flex flex-col gap-2 p-2">
-      <Text strong>Media key</Text>
-      <Text
-        size="sm"
-        className={
-          edited
-            ? "text-red-700 dark:text-red-500"
-            : "text-secondary dark:text-white"
-        }
-      >
-        {edited
-          ? "This is the edited code, not yet bound to this key"
-          : "This is the current code bound to this key"}
-      </Text>
-      <div className="flex flex-row gap-2">
-        <Button
-          variant="invisible"
-          className={editkey({ dashed: false })}
-          onClick={commit}
-          disabled={!edited}
-        >
-          <Save />
-        </Button>
-        <MediaKeys selectedCode={mediaCode} onClick={onUpdatedMediaCode} />
-      </div>
-    </div>
-  );
-}
-
-type MediaKeysProps = {
-  selectedCode: MediaCode | undefined;
-  onClick: (code: MediaCode) => void;
-};
-function MediaKeys({ selectedCode, onClick }: MediaKeysProps) {
-  return (
-    <div className="grid grid-cols-4 gap-2 self-start justify-self-start">
-      {MEDIA_CODE.map(code => (
-        <MediaKey
-          code={code}
-          key={code}
-          size="md"
-          className={displayKey({ selectedCode: selectedCode === code })}
-          onClick={() => onClick(code)}
-        />
-      ))}
-    </div>
   );
 }

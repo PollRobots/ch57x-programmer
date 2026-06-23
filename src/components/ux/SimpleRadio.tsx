@@ -4,6 +4,7 @@ import { CircleSmall, Dot } from "lucide-react";
 import React from "react";
 import { twMerge } from "tailwind-merge";
 
+import { Tooltip } from "./Tooltip";
 import { Text } from "./Typography";
 
 const simpleradiogroup = cva("flex gap-1", {
@@ -46,6 +47,8 @@ export type SimpleRadioProps<T = string> = {
 export type RadioOption<T = string> = {
   value: T;
   label: string;
+  description?: string;
+  icon?: (selected: boolean) => React.ReactNode;
 };
 
 export function SimpleRadio<T = string>({
@@ -70,23 +73,37 @@ export function SimpleRadio<T = string>({
     >
       {options.map((option, i) => {
         const selected = value.value === option.value;
+        const radioContent = renderOption ? (
+          renderOption(option, selected)
+        ) : (
+          <div
+            className={twMerge(
+              simpleradio({
+                selected,
+              }),
+              radioClassName
+            )}
+          >
+            {option.icon ? (
+              option.icon(selected)
+            ) : selected ? (
+              <CircleSmall />
+            ) : (
+              <Dot />
+            )}
+            <Text>{option.label} </Text>
+          </div>
+        );
+        if (option.description) {
+          return (
+            <Radio key={i} value={option.value}>
+              <Tooltip content={option.description}>{radioContent}</Tooltip>
+            </Radio>
+          );
+        }
         return (
           <Radio key={i} value={option.value}>
-            {renderOption ? (
-              renderOption(option, selected)
-            ) : (
-              <div
-                className={twMerge(
-                  simpleradio({
-                    selected,
-                  }),
-                  radioClassName
-                )}
-              >
-                {selected ? <CircleSmall /> : <Dot />}
-                <Text>{option.label} </Text>
-              </div>
-            )}
+            {radioContent}
           </Radio>
         );
       })}

@@ -14,7 +14,7 @@ export type SelectProfileProps = {
   profiles: KeyboardProfile[];
   selectedProfile: KeyboardProfile | undefined;
   onChangeProfiles: (updated: KeyboardProfile[]) => void;
-  onSelectProfile: (profile: KeyboardProfile) => void;
+  onSelectProfile: (profile: KeyboardProfile | undefined) => void;
   onAddProfile: (name: string) => void;
 
   selectedDevice: HIDDevice | undefined;
@@ -133,13 +133,9 @@ export function SelectProfile({
       />
       <Button
         variant="default"
-        disabled={
-          currentProfile === undefined || currentProfile === selectedProfile
-        }
+        disabled={currentProfile === selectedProfile}
         onClick={() => {
-          if (currentProfile) {
-            onSelectProfile(currentProfile);
-          }
+          onSelectProfile(currentProfile);
         }}
         description="Applies the settings from this profile. This changes the key-bindings in this app, it doesn't write to the device"
       >
