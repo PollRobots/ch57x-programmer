@@ -87,7 +87,7 @@ export function App() {
     readConfiguration,
     keyboardDeviceType,
     busy,
-    errors,
+    errors: keyboardErrors,
     writeKeyBindings,
   } = useKeyboardDevice(keyboardDevice);
 
@@ -435,7 +435,11 @@ export function App() {
                 <Button
                   className="flex w-24 items-center justify-around gap-2"
                   description="Read the current key-bindings from the selected device"
-                  onClick={onReadConfiguration}
+                  onClick={() => {
+                    ///onReadConfiguration;
+                    console.error("about to throw");
+                    throw new Error("oopsies");
+                  }}
                 >
                   <HardDriveUpload className="size-6" />
                   <Text size="sm">Read</Text>
@@ -486,10 +490,10 @@ export function App() {
               </div>
             </TabGroup>
           </div>
-          {errors.length > 0 && (
+          {keyboardErrors.length > 0 && (
             <div className="flex flex-col gap-2 rounded-xl bg-red-100 p-4 shadow-xl">
               <H2 className="text-red-700">Errors</H2>
-              {errors.map((err, i) => (
+              {keyboardErrors.map((err, i) => (
                 <Text key={i}>{err.toString()}</Text>
               ))}
             </div>
