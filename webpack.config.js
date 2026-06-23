@@ -35,7 +35,7 @@ module.exports = (env, argv) => {
       historyApiFallback: true,
     },
 
-    devtool: "source-map",
+    devtool: isProduction ? undefined : "source-map",
     resolve: {
       plugins: [new TsconfigPathsPlugin()],
       extensions: [".ts", ".tsx", ".js"],
@@ -43,6 +43,13 @@ module.exports = (env, argv) => {
 
     module: {
       rules: [
+        {
+          test: /\.(woff|woff2|eot|ttf|otf)$/i,
+          type: "asset/resource",
+          generator: {
+            filename: `${PROJECT}/fonts/[name].[contenthash][ext]`,
+          },
+        },
         {
           test: /\.ts(x?)$/,
           exclude: /node_modules/,
