@@ -346,10 +346,6 @@ export function App() {
     setEditedBindings(prev => prev.filter(binding => binding.layer !== layer));
   }, []);
 
-  if (hidChange === "NotSupported") {
-    return <Unsupported />;
-  }
-
   const onReadConfiguration = useCallback(() => {
     setOriginPreference("device");
     readConfiguration();
@@ -370,6 +366,10 @@ export function App() {
       .catch(error => console.error(error))
       .finally(() => setWriting(false));
   }, [writing, writeKeyBindings]);
+
+  if (hidChange === "NotSupported") {
+    return <Unsupported />;
+  }
 
   return (
     <KeyboardLayoutProvider>

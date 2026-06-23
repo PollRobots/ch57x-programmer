@@ -7,6 +7,8 @@ import { LayoutIcon } from "./LayoutIcon";
 
 export function Unsupported() {
   const browser = inferBrowser();
+  const mobile = isMobile();
+
   return (
     <div className="text-default flex max-h-screen min-h-screen flex-row gap-2 overflow-hidden bg-neutral-100 dark:bg-neutral-800 dark:text-white">
       <div className="flex flex-1 flex-col gap-2 overflow-y-scroll p-4">
@@ -18,6 +20,12 @@ export function Unsupported() {
           Unfortunately, either your browser doesn't support WebHID, or you have
           a security setting preventing access to HID devices.
         </Text>
+        {mobile && (
+          <Text>
+            It appears that you are using a mobile device. WebHID isn't
+            currently supported on any mobile browser or platform.
+          </Text>
+        )}
         <H3>Browser support</H3>
         <Text>
           Currently only <Text strong={browser === "Chrome"}>Chrome</Text>,{" "}
@@ -140,4 +148,8 @@ function inferBrowser(): Browser | undefined {
     tokens.some(token => agent.includes(token))
   );
   return browser?.name;
+}
+
+function isMobile(): boolean {
+  return window.matchMedia("(pointer: coarse)").matches;
 }
