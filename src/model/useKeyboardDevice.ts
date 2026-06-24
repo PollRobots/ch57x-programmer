@@ -4,8 +4,10 @@ import { useDebounceCallback } from "usehooks-ts";
 import { WELL_KNOWN_CODES } from "./key_codes";
 import {
   EncoderAction,
+  isKeyboardFamily,
   KeyBinding,
   Keyboard,
+  KeyboardCapabilities,
   KeyboardDeviceType,
   keysAreEqual,
   macrosAreEqual,
@@ -26,6 +28,7 @@ export type ActiveKeyboardDevice = {
   readDeviceType: () => void;
   readConfiguration: () => void;
   writeKeyBindings: (bindings: KeyBinding[]) => Promise<boolean>;
+  capabilities: KeyboardCapabilities;
 };
 
 export function useKeyboardDevice({
@@ -185,6 +188,19 @@ export function useKeyboardDevice({
     if (!device || pending) {
       return;
     }
+    if (!keyboard.capabilities.readConfiguration) {
+      // If possible infer basic info from the capabilities.
+      const family = keyboard.name;
+      if (isKeyboardFamily(family)) {
+        setDeviceType({
+          family,
+          buttons: keyboard.capabilities.maxButtons,
+          encoders: keyboard.capabilities.maxEncoders,
+          layers: keyboard.capabilities.maxLayers,
+        });
+      }
+      return;
+    }
     setPending(true);
     const packet = makeBuffer(keyboard.getDeviceType());
     device
@@ -194,7 +210,7 @@ export function useKeyboardDevice({
   }, [keyboard, device, pending]);
 
   const readConfiguration = useCallback(() => {
-    if (!device || pending) {
+    if (!device || pending || !keyboard.capabilities.readConfiguration) {
       return;
     }
     setPending(true);
@@ -265,6 +281,7 @@ export function useKeyboardDevice({
 
   return {
     name: keyboard.name,
+    capabilities: keyboard.capabilities,
     keyboardDeviceType: deviceType,
     keyBindings: keyBindings.length === 0 ? defaultBindings : keyBindings,
     errors,

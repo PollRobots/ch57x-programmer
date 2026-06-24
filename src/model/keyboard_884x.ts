@@ -6,6 +6,7 @@ import {
   Key,
   KeyBinding,
   Keyboard,
+  KeyboardCapabilities,
   KeyboardDeviceType,
   KeyChord,
   macroKind,
@@ -18,7 +19,9 @@ import {
   mouseButtonsValue,
   mouseModifierFromValue,
   mouseModifierValue,
+  signedByteToUnsigned,
   UNKNOWN_KEYBOARD_DEVICE,
+  unsignedByteToSigned,
 } from "./keyboard";
 
 const collator = new Intl.Collator("en-US", {
@@ -156,7 +159,16 @@ const READ_CONFIG_BUFFER_OFFSETS = {
   layers: 3,
 };
 
-export function makeKeyboard884(): Keyboard {
+const K884X_CAPABILITIES: KeyboardCapabilities = {
+  maxLayers: 16,
+  maxKeySequence: 18,
+  maxButtons: MAX_NUMBER_OF_BUTTONS,
+  maxEncoders: 3,
+  supportsKeyDelay: true,
+  readConfiguration: true,
+};
+
+export function makeKeyboard884x(): Keyboard {
   const keyboardDeviceType: KeyboardDeviceType = {
     ...UNKNOWN_KEYBOARD_DEVICE,
     family: "884x",
@@ -168,14 +180,14 @@ export function makeKeyboard884(): Keyboard {
         key >= MAX_NUMBER_OF_BUTTONS ||
         (key >= 12 && keyboardDeviceType.encoders === 4)
       ) {
-        throw new Error("Invalid key index");
+        throw new Error(`Invalid key index: ${key}`);
       }
       return key + 1;
     }
     const [encoder, action] = key;
 
     if (encoder >= 3) {
-      throw new Error("Invalid knob index");
+      throw new Error(`Invalid encoder index: ${encoder}`);
     }
     if (encoder === 3 && keyboardDeviceType.buttons <= 12) {
       return 13 + encoderActionValue(action);
@@ -209,9 +221,10 @@ export function makeKeyboard884(): Keyboard {
 
   return {
     name: "884x",
+    capabilities: K884X_CAPABILITIES,
     bindKey: (layer, key, expansion) => {
-      if (layer >= 16) {
-        return [];
+      if (layer >= K884X_CAPABILITIES.maxLayers) {
+        throw new Error(`Invalid layer index: ${layer}`);
       }
 
       const messages: number[][] = [];
@@ -232,8 +245,8 @@ export function makeKeyboard884(): Keyboard {
       switch (expansion.type) {
         case "Keyboard": {
           const presses = expansion.keyChords;
-          if (presses.length > 18) {
-            throw new Error("Macro sequence is too long");
+          if (presses.length > K884X_CAPABILITIES.maxKeySequence) {
+            throw new Error(`Macro sequence is too long: ${presses.length}`);
           }
 
           if (presses.length === 1 && presses[0]?.code === undefined) {
@@ -494,24 +507,4 @@ export function makeKeyboard884(): Keyboard {
       return;
     },
   };
-}
-
-function signedByteToUnsigned(signed: number): number {
-  if (signed <= -128) {
-    return 128;
-  }
-  if (signed >= 127) {
-    return 127;
-  }
-  if (signed > 0) {
-    return signed;
-  }
-  return 256 + signed;
-}
-
-function unsignedByteToSigned(unsigned: number): number {
-  if (unsigned <= 127) {
-    return unsigned;
-  }
-  return unsigned - 256;
 }

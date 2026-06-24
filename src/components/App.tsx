@@ -13,12 +13,14 @@ import { useEventListener } from "usehooks-ts";
 import { HidChange, useHidChange } from "@hooks/useHidChange";
 import {
   KeyBinding,
+  KeyboardDeviceType,
   keysAreEqual,
   keysCompare,
   Macro,
   NoopKeyboard,
 } from "@model/keyboard";
-import { makeKeyboard884 } from "@model/keyboard_884x";
+import { makeKeyboard884x } from "@model/keyboard_884x";
+import { makeKeyboard8890 } from "@model/keyboard_8890";
 import {
   forceOriginsToProfile,
   KeyboardProfile,
@@ -89,12 +91,19 @@ export function App() {
     busy,
     errors: keyboardErrors,
     writeKeyBindings,
+    capabilities,
   } = useKeyboardDevice(keyboardDevice);
+
+  const [userKeyboardDeviceType, setUserKeyboardDeviceType] = useState<
+    KeyboardDeviceType | undefined
+  >(() => selectedProfile?.userKeyboardDeviceType ?? undefined);
 
   const [editedBindings, setEditedBindings] = useState<KeyBinding[]>([]);
 
   const bindingsByLayer = React.useMemo(() => {
-    const layers: KeyBinding[][] = Array(keyboardDeviceType.layers)
+    const layers: KeyBinding[][] = Array(
+      userKeyboardDeviceType?.layers ?? keyboardDeviceType.layers
+    )
       .fill(null)
       .map(() => []);
 
@@ -130,11 +139,12 @@ export function App() {
     }
     return layers;
   }, [
+    editedBindings,
     keyBindings,
     keyboardDeviceType.layers,
-    editedBindings,
-    profileBindings,
     originPreference,
+    profileBindings,
+    userKeyboardDeviceType,
   ]);
 
   const addProfile = useCallback(
@@ -150,6 +160,9 @@ export function App() {
         keyboardDeviceType: {
           ...keyboardDeviceType,
         },
+        userKeyboardDeviceType: userKeyboardDeviceType
+          ? { ...userKeyboardDeviceType }
+          : undefined,
         layout: { ...selectedLayout },
         bindingsByLayer: JSON.parse(JSON.stringify(bindingsByLayer)),
       };
@@ -202,7 +215,13 @@ export function App() {
         .then(() => {
           if ((workingDevice.productId & 0x884f) === workingDevice.productId) {
             setKeyboardDevice({
-              keyboard: makeKeyboard884(),
+              keyboard: makeKeyboard884x(),
+              device: workingDevice,
+            });
+          }
+          if (workingDevice.productId === 0x8890) {
+            setKeyboardDevice({
+              keyboard: makeKeyboard8890(),
               device: workingDevice,
             });
           }
@@ -256,7 +275,8 @@ export function App() {
   const hidChange = useHidChange(onHidCHange);
 
   const layouts = useMemo<{ rows: number; columns: number }[]>(() => {
-    const buttons = keyboardDeviceType.buttons;
+    const buttons =
+      userKeyboardDeviceType?.buttons ?? keyboardDeviceType.buttons;
     if (buttons === 0) {
       return [{ rows: 0, columns: 0 }];
     }
@@ -275,7 +295,7 @@ export function App() {
     }
     layouts.push({ rows: buttons, columns: 1 });
     return layouts;
-  }, [keyboardDeviceType.buttons]);
+  }, [userKeyboardDeviceType, keyboardDeviceType.buttons]);
 
   const [selectedBinding, setSelectedBinding] = useState<
     Omit<KeyBinding, "expansion" | "origin">
@@ -338,6 +358,11 @@ export function App() {
     if (profile) {
       setOriginPreference("profile");
       setSelectedLayout({ ...profile.layout });
+      setUserKeyboardDeviceType(
+        profile.userKeyboardDeviceType
+          ? { ...profile.userKeyboardDeviceType }
+          : undefined
+      );
     }
     setSelectedProfile(profile);
   }, []);
@@ -347,9 +372,12 @@ export function App() {
   }, []);
 
   const onReadConfiguration = useCallback(() => {
+    if (!capabilities.readConfiguration) {
+      return;
+    }
     setOriginPreference("device");
     readConfiguration();
-  }, [readConfiguration]);
+  }, [readConfiguration, capabilities.readConfiguration]);
   const [writing, setWriting] = useState(false);
   const onWriteConfiguration = useCallback(() => {
     if (writing) {
@@ -385,8 +413,12 @@ export function App() {
           selectedLayout={selectedLayout}
           onSelectLayout={update => setSelectedLayout(update)}
           keyboardDeviceType={keyboardDeviceType}
+          userKeyboardDeviceType={userKeyboardDeviceType}
+          onChangeKeyboardDeviceType={setUserKeyboardDeviceType}
           canReadWriteConfiguration={currentDevice !== undefined && !busy}
-          onReadConfiguration={onReadConfiguration}
+          onReadConfiguration={
+            capabilities.readConfiguration ? onReadConfiguration : undefined
+          }
           onWriteConfiguration={onWriteConfiguration}
           profiles={profiles}
           selectedProfile={selectedProfile}
@@ -436,6 +468,7 @@ export function App() {
                   className="flex w-24 items-center justify-around gap-2"
                   description="Read the current key-bindings from the selected device"
                   onClick={onReadConfiguration}
+                  disabled={!capabilities.readConfiguration}
                 >
                   <HardDriveUpload className="size-6" />
                   <Text size="sm">Read</Text>
@@ -460,7 +493,9 @@ export function App() {
                       <Layer
                         layer={layer}
                         keyBindings={bindings}
-                        keyboardDeviceType={keyboardDeviceType}
+                        keyboardDeviceType={
+                          userKeyboardDeviceType ?? keyboardDeviceType
+                        }
                         selectedBinding={selectedBinding}
                         onSelectBinding={selectBinding}
                         keyLayout={selectedLayout}

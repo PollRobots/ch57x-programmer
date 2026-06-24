@@ -6,8 +6,18 @@ import {
   wellKnownCodeValue,
 } from "./key_codes";
 
+export type KeyboardCapabilities = {
+  readonly maxLayers: number;
+  readonly maxKeySequence: number;
+  readonly maxButtons: number;
+  readonly maxEncoders: number;
+  readonly supportsKeyDelay: boolean;
+  readonly readConfiguration: boolean;
+};
+
 export type Keyboard = {
   readonly name: string;
+  readonly capabilities: KeyboardCapabilities;
   bindKey: (layer: number, key: Key, expansion: Macro) => number[][];
   setLed: (args: string[]) => number[][];
   getDeviceType: () => number[];
@@ -19,6 +29,14 @@ export type Keyboard = {
 
 export const NoopKeyboard: Keyboard = {
   name: "NoopKeyboard",
+  capabilities: {
+    maxLayers: 1,
+    maxKeySequence: 5,
+    maxButtons: 12,
+    maxEncoders: 2,
+    supportsKeyDelay: false,
+    readConfiguration: false,
+  },
   bindKey: () => [],
   setLed: () => [],
   getDeviceType: () => [],
@@ -30,10 +48,11 @@ export const NoopKeyboard: Keyboard = {
 
 export type KeyboardPacketType = "device" | "config";
 
-export type KeyboardFamily = "884x" | "%other";
+export type KeyboardFamily = "884x" | "8890" | "%other";
 
 export const KeyboardFamilySchema = z.union([
   z.literal("884x"),
+  z.literal("8890"),
   z.literal("%other"),
 ]) satisfies z.ZodType<KeyboardFamily>;
 
@@ -54,22 +73,11 @@ export const KeyboardDeviceTypeSchema = z.object({
 export function isKeyboardDeviceType(
   value: unknown
 ): value is KeyboardDeviceType {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "family" in value &&
-    isKeyboardFamily(value.family) &&
-    "buttons" in value &&
-    Number.isInteger(value.buttons) &&
-    "encoders" in value &&
-    Number.isInteger(value.encoders) &&
-    "layers" in value &&
-    Number.isInteger(value.layers)
-  );
+  return KeyboardDeviceTypeSchema.safeParse(value).success;
 }
 
-function isKeyboardFamily(value: unknown): value is KeyboardFamily {
-  return value === "884x" || value === "%other";
+export function isKeyboardFamily(value: unknown): value is KeyboardFamily {
+  return KeyboardFamilySchema.safeParse(value).success;
 }
 
 export const UNKNOWN_KEYBOARD_DEVICE: KeyboardDeviceType = {
@@ -669,4 +677,24 @@ export const KeyBindingSchema = z.object({
 
 export function isKeyBinding(value: unknown): value is KeyBinding {
   return KeyBindingSchema.safeParse(value).success;
+}
+
+export function signedByteToUnsigned(signed: number): number {
+  if (signed <= -128) {
+    return 128;
+  }
+  if (signed >= 127) {
+    return 127;
+  }
+  if (signed > 0) {
+    return signed;
+  }
+  return 256 + signed;
+}
+
+export function unsignedByteToSigned(unsigned: number): number {
+  if (unsigned <= 127) {
+    return unsigned;
+  }
+  return unsigned - 256;
 }

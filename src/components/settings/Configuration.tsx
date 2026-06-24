@@ -1,6 +1,7 @@
 import { HardDriveDownload, HardDriveUpload } from "lucide-react";
 import React from "react";
 
+import { KeyboardDeviceType } from "@model/keyboard";
 import { Button } from "@ux/Button";
 import { Expando } from "@ux/Expando";
 import { H3, Text } from "@ux/Typography";
@@ -9,12 +10,15 @@ import { Settings } from "../hooks/useSettings";
 import { SelectDevice, SelectDeviceProps } from "./SelectDevice";
 import { SelectLayout, SelectLayoutProps } from "./SelectLayout";
 import { SelectProfile, SelectProfileProps } from "./SelectProfile";
+import { SetDeviceType } from "./SetDeviceType";
 import { SettingsEditor } from "./SettingsEditor";
 
 export type ConfigurationProps = {
   canReadWriteConfiguration: boolean;
-  onReadConfiguration: () => void;
+  onReadConfiguration: (() => void) | undefined;
   onWriteConfiguration: () => void;
+  userKeyboardDeviceType: KeyboardDeviceType | undefined;
+  onChangeKeyboardDeviceType: (update: KeyboardDeviceType) => void;
 
   settings: Settings;
   onChangeSettings: (update: Settings) => void;
@@ -44,6 +48,8 @@ function OpenConfiguration({
   selectedLayout,
   onSelectLayout,
   keyboardDeviceType,
+  userKeyboardDeviceType,
+  onChangeKeyboardDeviceType,
   canReadWriteConfiguration,
   onReadConfiguration,
   onWriteConfiguration,
@@ -64,8 +70,15 @@ function OpenConfiguration({
           onSelectDevice={onSelectDevice}
           onAddDevice={onAddDevice}
         />
+        {canReadWriteConfiguration && !onReadConfiguration && (
+          <SetDeviceType
+            keyboardDeviceType={keyboardDeviceType}
+            userKeyboardDeviceType={userKeyboardDeviceType}
+            onChange={onChangeKeyboardDeviceType}
+          />
+        )}
         <SelectLayout
-          keyboardDeviceType={keyboardDeviceType}
+          keyboardDeviceType={userKeyboardDeviceType ?? keyboardDeviceType}
           layouts={layouts}
           selectedLayout={selectedLayout}
           onSelectLayout={onSelectLayout}
@@ -73,7 +86,7 @@ function OpenConfiguration({
         <Button
           className="flex items-center gap-2"
           onClick={onReadConfiguration}
-          disabled={!canReadWriteConfiguration}
+          disabled={!canReadWriteConfiguration || !onReadConfiguration}
           size="lg"
           description="Read the current key-bindings from the selected device"
         >

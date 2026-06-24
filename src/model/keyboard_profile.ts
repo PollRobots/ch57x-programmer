@@ -27,6 +27,7 @@ export type KeyboardProfile = {
   vendorId: VendorId;
   productId: number;
   keyboardDeviceType: KeyboardDeviceType;
+  userKeyboardDeviceType?: KeyboardDeviceType | null | undefined;
   layout: KeyLayout;
   bindingsByLayer: KeyBinding[][];
 };
@@ -36,6 +37,7 @@ export const KeyboardProfileSchema = z.object({
   vendorId: VendorIdSchema,
   productId: z.number(),
   keyboardDeviceType: KeyboardDeviceTypeSchema,
+  userKeyboardDeviceType: KeyboardDeviceTypeSchema.optional(),
   layout: KeyLayoutSchema,
   bindingsByLayer: z.array(z.array(KeyBindingSchema)),
 }) satisfies z.ZodType<KeyboardProfile>;
