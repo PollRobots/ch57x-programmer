@@ -18,6 +18,7 @@ export type EditKeyProps = {
   updatedMacro: Macro | undefined;
   onChange: (updatedMacro: Macro | undefined) => void;
   onCommit: () => void;
+  maxKeySequence: number;
 };
 
 export function EditKey({
@@ -25,6 +26,7 @@ export function EditKey({
   updatedMacro,
   onChange,
   onCommit,
+  maxKeySequence,
 }: EditKeyProps) {
   const workingMacro = React.useMemo<Macro>(() => {
     if (updatedMacro) {
@@ -72,6 +74,7 @@ export function EditKey({
           updatedMacro !== undefined || initialBinding?.origin === "editor"
         }
         onCommit={onCommit}
+        maxKeySequence={maxKeySequence}
       />
     </div>
   );
@@ -82,6 +85,7 @@ type MacroEditorProps = {
   onChange: (update: Macro) => void;
   edited: boolean;
   onCommit: () => void;
+  maxKeySequence: number;
 };
 
 const MACRO_TYPES = ["Keyboard", "Media", "Mouse"];
@@ -102,7 +106,13 @@ const macrotab = cva("px-2 py-1 border", {
   },
 });
 
-function MacroEditor({ macro, onChange, edited, onCommit }: MacroEditorProps) {
+function MacroEditor({
+  macro,
+  onChange,
+  edited,
+  onCommit,
+  maxKeySequence,
+}: MacroEditorProps & { maxKeySequence: number }) {
   return (
     <TabGroup defaultIndex={MACRO_TYPES.indexOf(macro.type)}>
       <TabList className="flex flex-row">
@@ -139,6 +149,7 @@ function MacroEditor({ macro, onChange, edited, onCommit }: MacroEditorProps) {
             }
             edited={edited}
             commit={onCommit}
+            maxKeySequence={maxKeySequence}
           />
         </TabPanel>
         <TabPanel>

@@ -25,6 +25,7 @@ export type KeyboardEditorProps = {
   onUpdatedKeyChords: (update: KeyChord[]) => void;
   edited: boolean;
   commit: () => void;
+  maxKeySequence: number;
 };
 
 const sequencekey = cva(
@@ -74,6 +75,7 @@ export function KeyboardEditor({
   onUpdatedKeyChords,
   commit,
   edited,
+  maxKeySequence,
 }: KeyboardEditorProps) {
   const [selectedKey, setSelectedKey] = useState(0);
   const selectedChord = keyChords[selectedKey];
@@ -121,7 +123,7 @@ export function KeyboardEditor({
   }, [keyChords, selectedKey, onUpdatedKeyChords]);
 
   return (
-    <div className="flex min-w-[46rem] flex-col gap-2 p-2">
+    <div className="flex min-w-184 flex-col gap-2 p-2">
       <Text strong>Key sequence</Text>
       <Text
         size="sm"
@@ -147,7 +149,7 @@ export function KeyboardEditor({
             </div>
           </Radio>
         ))}
-        {keyChords.length < 18 && (
+        {keyChords.length < maxKeySequence && (
           <Button
             variant="invisible"
             className={editkey({ dashed: true })}

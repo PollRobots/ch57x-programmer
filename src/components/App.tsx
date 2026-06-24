@@ -515,6 +515,7 @@ export function App() {
                       updatedMacro={workingMacro}
                       onChange={setWorkingMacro}
                       onCommit={commitWorkingMacro}
+                      maxKeySequence={capabilities.maxKeySequence}
                     />
                   </div>
                 )}
