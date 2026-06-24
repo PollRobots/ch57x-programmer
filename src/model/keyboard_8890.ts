@@ -13,9 +13,9 @@ import {
   signedByteToUnsigned,
 } from "@model/keyboard";
 
-const K8890_CAPABILITES: KeyboardCapabilities = {
+const K8890_CAPABILITIES: KeyboardCapabilities = {
   maxLayers: 16,
-  maxKeySequence: 5,
+  maxKeySequence: 6,
   maxButtons: 12,
   maxEncoders: 3,
   supportsKeyDelay: false,
@@ -25,9 +25,9 @@ const K8890_CAPABILITES: KeyboardCapabilities = {
 export function makeKeyboard8890(): Keyboard {
   return {
     name: "8890",
-    capabilities: K8890_CAPABILITES,
+    capabilities: K8890_CAPABILITIES,
     bindKey: (layer: number, key: Key, macro: Macro): number[][] => {
-      if (layer >= K8890_CAPABILITES.maxLayers) {
+      if (layer >= K8890_CAPABILITIES.maxLayers) {
         throw new Error(`Invalid layer index: ${layer}`);
       }
 
@@ -41,7 +41,7 @@ export function makeKeyboard8890(): Keyboard {
               "Delay feature is not supported by this keyboard model"
             );
           }
-          if (macro.keyChords.length > K8890_CAPABILITES.maxKeySequence) {
+          if (macro.keyChords.length > K8890_CAPABILITIES.maxKeySequence) {
             throw new Error(
               `Macro sequence is too long: ${macro.keyChords.length}`
             );
@@ -115,16 +115,16 @@ export function makeKeyboard8890(): Keyboard {
 
 function keyId(key: Key): number {
   if (typeof key === "number") {
-    if (key >= K8890_CAPABILITES.maxButtons) {
+    if (key >= K8890_CAPABILITIES.maxButtons) {
       throw new Error(`Invalid key index: ${key}`);
     }
     return key + 1;
   }
   const [encoder, action] = key;
-  if (encoder >= K8890_CAPABILITES.maxEncoders) {
+  if (encoder >= K8890_CAPABILITIES.maxEncoders) {
     throw new Error(`Invalid encoder index: ${key}`);
   }
   return (
-    K8890_CAPABILITES.maxButtons + 1 + 3 * encoder + encoderActionValue(action)
+    K8890_CAPABILITIES.maxButtons + 1 + 3 * encoder + encoderActionValue(action)
   );
 }
