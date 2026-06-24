@@ -7,8 +7,8 @@
     "start": "webpack serve --mode development --hot",
     "build-prod": "webpack --mode production",
     "build-dev": "webpack --mode development",
-    "format-check": "prettier --check src/**/*.{ts,tsx}",
-    "format": "prettier --write src/**/*.{ts,tsx}"
+    "format-check": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\""
   },
   "keywords": [],
   "author": "",
