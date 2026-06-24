@@ -1,4 +1,5 @@
 import { Input } from "@headlessui/react";
+import { cva } from "class-variance-authority";
 import React, { useCallback } from "react";
 
 import { KeyboardDeviceType } from "@model/keyboard";
@@ -9,6 +10,11 @@ export type SetDeviceTypeProps = {
   userKeyboardDeviceType: KeyboardDeviceType | undefined;
   onChange: (update: KeyboardDeviceType) => void;
 };
+
+const input = cva([
+  "rounded-lg border border-neutral-300 bg-neutral-100 p-2 hover:border-neutral-500",
+  "p-2 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:border-neutral-400",
+]);
 
 export function SetDeviceType({
   keyboardDeviceType,
@@ -97,6 +103,7 @@ export function SetDeviceType({
     <>
       <Text strong>Buttons:</Text>
       <Input
+        className={input()}
         value={buttons}
         type="number"
         min="0"
@@ -105,6 +112,7 @@ export function SetDeviceType({
       />
       <Text strong>Encoders:</Text>
       <Input
+        className={input()}
         value={encoders}
         type="number"
         min="0"
@@ -113,6 +121,7 @@ export function SetDeviceType({
       />
       <Text strong>Layers:</Text>
       <Input
+        className={input()}
         value={layers}
         type="number"
         min="0"
