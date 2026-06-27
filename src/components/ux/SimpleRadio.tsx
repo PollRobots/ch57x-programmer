@@ -17,7 +17,7 @@ const simpleradiogroup = cva("flex gap-1", {
 });
 
 const simpleradio = cva(
-  "px-2 py-1 border flex flex-row gap-2 items-center rounded",
+  "px-2 py-1 border flex flex-row gap-2 items-center rounded cursor-pointer",
   {
     variants: {
       selected: {
