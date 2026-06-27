@@ -1,24 +1,16 @@
 import { Radio, RadioGroup } from "@headlessui/react";
-import { cva, type VariantProps } from "class-variance-authority";
+import { cva } from "class-variance-authority";
 import { Minus, Plus, Save } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 
-import {
-  isFunctionKey,
-  NumPadKey,
-  WELL_KNOWN_CODES,
-  WellKnownCode,
-  wellKnownCodeValue,
-} from "@model/key_codes";
-import { isModifier, KeyChord, Modifier } from "@model/keyboard";
-import { useKeyboardLayout } from "@model/useKeyboardLayout";
+import { Code, isModifier, KeyChord, Modifier } from "@model/keyboard";
 import { Button } from "@ux/Button";
-import { Expando } from "@ux/Expando";
-import { Tooltip } from "@ux/Tooltip";
-import { H4, Text } from "@ux/Typography";
+import { Text } from "@ux/Typography";
 
 import { DisplayKeyChord } from "../DisplayKeyBinding";
-import { KeyCode } from "../KeyCode";
+import { AllKeys } from "./keyboard/AllKeys";
+import { KeyboardCode } from "./keyboard/KeyboardCode";
+import { StandardLayout } from "./keyboard/StandardLayout";
 
 export type KeyboardEditorProps = {
   keyChords: KeyChord[];
@@ -81,7 +73,7 @@ export function KeyboardEditor({
   const selectedChord = keyChords[selectedKey];
 
   const onKeyClick = useCallback(
-    (code: WellKnownCode | Modifier) => {
+    (code: Code | Modifier) => {
       const updated = [...keyChords];
 
       while (updated.length <= selectedKey) {
@@ -179,288 +171,9 @@ export function KeyboardEditor({
           </Button>
         )}
       </RadioGroup>
-      <div className="flex flex-wrap justify-start gap-4">
-        <AlNumKeys selectedChord={selectedChord} onClick={onKeyClick} />
-        <ArrowKeysEtc selectedChord={selectedChord} onClick={onKeyClick} />
-        <NumPadKeys selectedChord={selectedChord} onClick={onKeyClick} />
-      </div>
+      <StandardLayout selectedChord={selectedChord} onClick={onKeyClick} />
       <AllKeys selectedChord={selectedChord} onClick={onKeyClick} />
+      <KeyboardCode selectedChord={selectedChord} onClick={onKeyClick} />
     </div>
-  );
-}
-
-// prettier-ignore
-const ALNUM_ROWS: (WellKnownCode|Modifier|"gap")[][] = [
-  ["Escape", "gap", "F1", "F2", "F3", "F4", "gap", "F5", "F6", "F7", "F8", "gap", "F9", "F10", "F11", "F12", "Power"],
-  ["Grave", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "Minus", "Equal", "Backspace"],
-     ["Tab", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "LeftBracket", "RightBracket", "Backslash"],
- ["CapsLock", "A", "S", "D", "F", "G", "H", "J", "K", "L", "Semicolon", "Quote", "Enter"],
-     ["Shift", "Z", "X", "C", "V", "B", "N", "M", "Comma", "Dot", "Slash", "RightShift"],
-     ["Ctrl", "Meta", "Alt", "Space", "RightAlt", "RightMeta", "RightCtrl"],
-]
-
-const CUSTOM_WIDTHS = new Map<string, string>([
-  ["13,1", "min-w-9"],
-  ["0,2", "flex-1"],
-  ["0,3", "flex-1"],
-  ["12,3", "flex-1"],
-  ["0,4", "flex-1"],
-  ["11,4", "flex-1"],
-  ["0,5", "flex-1"],
-  ["3,5", "flex-6"],
-  ["6,5", "flex-1"],
-]);
-
-type KeyboardSectionProps = {
-  selectedChord: KeyChord | undefined;
-  onClick: (code: WellKnownCode | Modifier) => void;
-};
-
-export const displayKey = cva("", {
-  variants: {
-    selectedCode: {
-      true: "bg-amber-500/30",
-      false: null,
-    },
-    selectedModifier: {
-      true: "bg-violet-500/30",
-      false: null,
-    },
-  },
-});
-
-function AlNumKeys({ selectedChord, onClick }: KeyboardSectionProps) {
-  return (
-    <div className="flex flex-col gap-1">
-      <H4>Keyboard</H4>
-      {ALNUM_ROWS.map((row, i) => {
-        return (
-          <div key={i} className="flex flex-row justify-between gap-1">
-            {row.map((code, j) => {
-              if (code === "gap") {
-                return <div key={`${i}.${j}`} />;
-              }
-              return (
-                <button
-                  key={code}
-                  className={CUSTOM_WIDTHS.get(`${j},${i}`)}
-                  onClick={() => onClick(code)}
-                >
-                  <KeyCode
-                    code={code}
-                    className={displayKey({
-                      selectedCode: selectedChord?.code === code,
-                      selectedModifier:
-                        isModifier(code) &&
-                        (selectedChord?.modifiers ?? []).includes(code),
-                      className: CUSTOM_WIDTHS.has(`${j},${i}`) && "w-full",
-                    })}
-                  />
-                </button>
-              );
-            })}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-const numpadkeys = cva("", {
-  variants: {
-    wide: {
-      true: "col-span-2",
-      false: null,
-    },
-    tall: {
-      true: "row-span-2",
-      false: null,
-    },
-  },
-});
-const numpadkeysinner = cva("", {
-  variants: {
-    wide: {
-      true: "w-full",
-      false: null,
-    },
-    tall: {
-      true: "h-full",
-      false: null,
-    },
-  },
-});
-
-type NumPadKeyDef = {
-  code: NumPadKey | "NumLock" | "NumPadEnter";
-} & VariantProps<typeof numpadkeys>;
-
-// prettier-ignore
-const NUMPAD_KEYS: NumPadKeyDef[] = [
-  {code: "NumLock"}, {code: "NumPadSlash"}, {code: "NumPadAsterisk"}, {code: "NumPadMinus"},
-  {code: "NumPad7"}, {code: "NumPad8"}, {code: "NumPad9"}, {code: "NumPadPlus", tall: true},
-  {code: "NumPad4"}, {code: "NumPad5"}, {code: "NumPad6"},
-  {code: "NumPad1"}, {code: "NumPad2"}, {code: "NumPad3"}, {code: "NumPadEnter", tall: true},
-  {code: "NumPad0", wide: true}, {code: "NumPadDot"},
-];
-
-function NumPadKeys({ selectedChord, onClick }: KeyboardSectionProps) {
-  return (
-    <div className="grid grid-cols-4 gap-1">
-      <H4 size="md" className="col-span-4">
-        Number pad
-      </H4>
-      <div className="col-span-4 min-h-7" />
-      {NUMPAD_KEYS.map(({ code, wide, tall }) => {
-        const keyCode = (
-          <KeyCode
-            code={code}
-            simple
-            className={displayKey({
-              selectedCode: selectedChord?.code === code,
-              className: numpadkeysinner({ wide, tall }),
-            })}
-          />
-        );
-        if (code === "NumLock") {
-          return (
-            <Tooltip key={code} content="Numlock">
-              <button
-                onClick={() => onClick(code)}
-                className={numpadkeys({ wide, tall })}
-              >
-                {keyCode}
-              </button>
-            </Tooltip>
-          );
-        }
-        return (
-          <button
-            key={code}
-            onClick={() => onClick(code)}
-            className={numpadkeys({ wide, tall })}
-          >
-            {keyCode}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// prettier-ignore
-const ARROW_KEYS_ETC : (WellKnownCode|"blank-line"|"empty")[] = [
-  "blank-line",
-  "Insert", "Home", "PageUp",
-  "Delete", "End",  "PageDown",
-  "blank-line",
-  "empty",  "Up",   "empty",
-  "Left",   "Down", "Right",
-]
-
-function ArrowKeysEtc({ selectedChord, onClick }: KeyboardSectionProps) {
-  return (
-    <div className="grid grid-cols-3 gap-1">
-      <H4 size="md" className="col-span-3">
-        Navigation
-      </H4>
-      {ARROW_KEYS_ETC.map((code, i) => {
-        if (code === "blank-line") {
-          return <div key={i} className="col-span-3 h-7" />;
-        }
-        if (code === "empty") {
-          return <div key={i} />;
-        }
-        return (
-          <Button
-            key={code}
-            description={
-              code.startsWith("Page") ? `Page ${code.slice(4)}` : code
-            }
-            onClick={() => onClick(code)}
-            variant="invisible"
-            className="p-0"
-          >
-            <KeyCode
-              code={code}
-              className={displayKey({
-                selectedCode: selectedChord?.code === code,
-              })}
-            />
-          </Button>
-        );
-      })}
-    </div>
-  );
-}
-
-function AllKeys({ selectedChord, onClick }: KeyboardSectionProps) {
-  const { getKeyName, isFallback } = useKeyboardLayout();
-  const sortedCodes = useMemo(() => {
-    if (isFallback) {
-      const codes = [...WELL_KNOWN_CODES];
-      codes.sort((a, b) => {
-        const lengthDelta = a.length - b.length;
-        if (a.length === 1 || b.length === 1) {
-          if (lengthDelta !== 0) {
-            return lengthDelta;
-          }
-          return a.localeCompare(b);
-        }
-        if (isFunctionKey(a) && isFunctionKey(b)) {
-          return Number(a.slice(1)) - Number(b.slice(1));
-        } else if (isFunctionKey(a)) {
-          return -1;
-        } else if (isFunctionKey(b)) {
-          return 1;
-        }
-        return wellKnownCodeValue(a) - wellKnownCodeValue(b);
-      });
-      return codes;
-    }
-    const codes = WELL_KNOWN_CODES.map<[WellKnownCode, string]>(code => [
-      code,
-      getKeyName(code) ?? code,
-    ]);
-    codes.sort(([aCode, a], [bCode, b]) => {
-      const lengthDelta = a.length - b.length;
-      if (a.length === 1 || b.length === 1) {
-        if (lengthDelta !== 0) {
-          return lengthDelta;
-        }
-        return a.localeCompare(b);
-      }
-      if (isFunctionKey(a) && isFunctionKey(b)) {
-        return Number(a.slice(1)) - Number(b.slice(1));
-      } else if (isFunctionKey(a)) {
-        return -1;
-      } else if (isFunctionKey(b)) {
-        return 1;
-      }
-      return wellKnownCodeValue(aCode) - wellKnownCodeValue(bCode);
-    });
-    return codes.map(([code, _]) => code);
-  }, [getKeyName, isFallback]);
-
-  return (
-    <Expando
-      collapseDirection="up"
-      title={<H4>Common keys</H4>}
-      openContent={
-        <div className="flex max-w-120 flex-wrap gap-2">
-          {sortedCodes.map(code => (
-            <button onClick={() => onClick(code)}>
-              <KeyCode
-                key={code}
-                code={code}
-                className={displayKey({
-                  selectedCode: selectedChord?.code === code,
-                })}
-              />
-            </button>
-          ))}
-        </div>
-      }
-    />
   );
 }

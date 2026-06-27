@@ -5,7 +5,7 @@ import { twMerge } from "tailwind-merge";
 import { Tooltip } from "./Tooltip";
 
 const button = cva(
-  "box-border border focus:ring-1 rounded-lg focus:outline-none select-none",
+  "box-border focus:ring-1 rounded-lg focus:outline-none select-none",
   {
     variants: {
       size: {
@@ -15,16 +15,17 @@ const button = cva(
       },
       variant: {
         default: [
-          "text-secondary bg-neutral-100 border-neutral-400 hover:bg-neutral-200 hover:text-default focus:ring-1 focus:ring-neutral-400 shadow-xs",
+          "border text-secondary bg-neutral-100 border-neutral-400 hover:bg-neutral-200 hover:text-default focus:ring-1 focus:ring-neutral-400 shadow-xs",
           "dark:text-white dark:bg-neutral-800 dark:border-neutral-500 dark:hover:bg-neutral-700 dark:hover:text-white dark:focus:ring-1 focus:ring-neutral-500",
         ],
         primary: [
-          "text-white bg-indigo-500 hover:bg-indigo-600 border-transparent focus:ring-1 focus:ring-indigo-500 shadow-xs",
+          "border text-white bg-indigo-500 hover:bg-indigo-600 border-transparent focus:ring-1 focus:ring-indigo-500 shadow-xs",
         ],
         invisible: [
-          "text-secondary border-transparent hover:text-default focus:ring-1 focus:ring-neutral-400",
+          "border text-secondary border-transparent hover:text-default focus:ring-1 focus:ring-neutral-400",
           "dark:text-white dark:hover:text-white dark:focus:ring-neutral-500",
         ],
+        none: null,
       },
       disabled: {
         false: "cursor-pointer",

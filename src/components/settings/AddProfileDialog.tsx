@@ -4,13 +4,12 @@ import {
   DialogPanel,
   DialogTitle,
   Field,
-  Input,
   Label,
 } from "@headlessui/react";
 import React, { useState } from "react";
-import { twJoin } from "tailwind-merge";
 
 import { Button } from "@ux/Button";
+import { Input } from "@ux/Input";
 import { H3, Text } from "@ux/Typography";
 
 export type AddProfileDialogProps = {
@@ -36,7 +35,7 @@ export function AddProfileDialog({
             Add profile
           </DialogTitle>
           <Description>This will add a new keyboard profile</Description>
-          <Field className="flex flex-col">
+          <Field className="flex flex-col gap-1">
             <Label as={Text} size="sm" strong>
               Profile name
             </Label>
@@ -48,17 +47,13 @@ export function AddProfileDialog({
               The name for the new profile. This can be edited later
             </Description>
             <Input
-              className={twJoin(
-                "mt-3 block w-full rounded-lg border-none px-3 py-1.5 text-sm/6",
-                "bg-black/5 text-black dark:bg-white/5 dark:text-white",
-                "focus:not-data-focus:outline-none data-focus:outline-1 data-focus:-outline-offset-2",
-                "data-focus:outline-black/25 dark:data-focus:outline-white/25"
-              )}
               name="profile_name"
               type="text"
               placeholder="Profile name…"
               value={name}
               onChange={event => setName(event.target.value)}
+              size="md"
+              className="mt-2"
             />
             {names.includes(name) && (
               <Text size="sm" className="text-red-500">

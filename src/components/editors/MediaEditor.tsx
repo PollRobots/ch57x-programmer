@@ -6,7 +6,8 @@ import { Button } from "@ux/Button";
 import { Text } from "@ux/Typography";
 
 import { MediaKey } from "../MediaKey";
-import { displayKey, editkey } from "./KeyboardEditor";
+import { displayKey } from "./keyboard/KeyboardSection";
+import { editkey } from "./KeyboardEditor";
 
 export type MediaEditorProps = {
   mediaCode: MediaCode | undefined;
