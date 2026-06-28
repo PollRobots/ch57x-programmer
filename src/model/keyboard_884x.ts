@@ -450,20 +450,20 @@ export function makeKeyboard884x(): Keyboard {
           const high = data[11] ?? 0;
           const code = low + (high << 8);
           const mediaCode = MEDIA_CODE.find(m => MediaCodeValues[m] === code);
-          if (mediaCode) {
-            return {
-              layer,
-              key,
-              expansion: {
-                type: "Media",
-                mediaCode,
-              },
-              origin: "device",
-            };
+          if (mediaCode === undefined) {
+            return;
           }
-          break;
+          return {
+            layer,
+            key,
+            expansion: {
+              type: "Media",
+              mediaCode,
+            },
+            origin: "device",
+          };
         }
-        case "Mouse":
+        case "Mouse": {
           if (data[9] !== 4) {
             return;
           }
@@ -502,9 +502,8 @@ export function makeKeyboard884x(): Keyboard {
             },
             origin: "device",
           };
+        }
       }
-
-      return;
     },
   };
 }

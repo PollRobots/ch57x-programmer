@@ -32,13 +32,13 @@ import React, { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 
 import {
-  SpecialKey as DisplaySpecialKey,
   isFunctionKey,
   isNumPadKey,
   isPunctuationKey,
   isSpecialKey,
   NumPadKey,
   PunctuationKey,
+  SpecialKey,
   WellKnownCode,
 } from "@model/key_codes";
 import { Code, isModifier, Modifier } from "@model/keyboard";
@@ -123,7 +123,6 @@ type DefaultKeyCodeProps = {
 
 function DefaultKeyCode({
   wellKnownCode,
-  simple = false,
   className,
   ...other
 }: DefaultKeyCodeProps) {
@@ -278,7 +277,7 @@ function DisplayPunctuationKey({
 }
 
 type DisplaySpecialKeyProps = {
-  specialKey: DisplaySpecialKey;
+  specialKey: SpecialKey;
   simple?: boolean;
 } & React.ComponentProps<"span">;
 
@@ -351,7 +350,7 @@ function DisplaySpecialKey({
       case "NumPadEnter":
         return simple
           ? {
-              name: <CornerDownLeft className="inline-bock size-4" />,
+              name: <CornerDownLeft className="inline-block size-4" />,
               square: true,
             }
           : {
@@ -424,7 +423,7 @@ function DisplaySpecialKey({
           square: true,
         };
     }
-  }, [specialKey]);
+  }, [simple, specialKey]);
 
   return (
     <span className={twMerge(commonkeyclass({ square }), className)} {...other}>

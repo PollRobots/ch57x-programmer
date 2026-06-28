@@ -35,7 +35,7 @@ export function makeKeyboard8890(): Keyboard {
 
       messages.push([0xfe, layer + 1, 0x1, 0x1]);
       switch (macro.type) {
-        case "Keyboard":
+        case "Keyboard": {
           if (macro.options.delay !== 0) {
             throw new Error(
               "Delay feature is not supported by this keyboard model"
@@ -67,6 +67,7 @@ export function makeKeyboard8890(): Keyboard {
           );
 
           break;
+        }
         case "Mouse":
           {
             const action = macro.action;

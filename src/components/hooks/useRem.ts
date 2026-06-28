@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 export function useRem(): number {
   const [rem, setRem] = useState(16);
@@ -12,7 +18,7 @@ export function useRem(): number {
   const observer = useMemo(() => new ResizeObserver(onResize), [onResize]);
 
   useEffect(() => {
-    onResize();
+    startTransition(onResize);
     observer.observe(document.documentElement);
     return () => observer.unobserve(document.documentElement);
   }, [observer, onResize]);

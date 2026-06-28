@@ -143,13 +143,13 @@ function KeyCode({ code }: KeyCodeProps) {
     return <Text>{code}</Text>;
   }
   if (isNumPadKey(code)) {
-    return <NumPadKey numPadKey={code} />;
+    return <NumPadKeyDisplay numPadKey={code} />;
   }
   if (isPunctuationKey(code)) {
-    return <PunctuationKey punctuationKey={code} />;
+    return <PunctuationKeyDisplay punctuationKey={code} />;
   }
   if (isSpecialKey(code)) {
-    return <SpecialKey specialKey={code} />;
+    return <SpecialKeyDisplay specialKey={code} />;
   }
   return <DefaultKeyCode wellKnownCode={code} />;
 }
@@ -186,7 +186,7 @@ type NumPadKeyProps = {
   numPadKey: NumPadKey;
 };
 
-function NumPadKey({ numPadKey }: NumPadKeyProps) {
+function NumPadKeyDisplay({ numPadKey }: NumPadKeyProps) {
   const name = useMemo(() => {
     switch (numPadKey) {
       case "NumPadSlash":
@@ -238,7 +238,7 @@ type PunctuationKeyProps = {
   punctuationKey: PunctuationKey;
 };
 
-function PunctuationKey({ punctuationKey }: PunctuationKeyProps) {
+function PunctuationKeyDisplay({ punctuationKey }: PunctuationKeyProps) {
   const name = useMemo(() => {
     switch (punctuationKey) {
       case "Minus":
@@ -279,7 +279,7 @@ type SpecialKeyProps = {
   specialKey: SpecialKey;
 };
 
-function SpecialKey({ specialKey }: SpecialKeyProps) {
+function SpecialKeyDisplay({ specialKey }: SpecialKeyProps) {
   const name = useMemo<React.ReactNode>(() => {
     switch (specialKey) {
       case "Enter":

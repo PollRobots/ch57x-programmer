@@ -14,7 +14,7 @@ export function useKeyboardLayoutRoot(): KeyboardLayout {
       navigator.keyboard?.getLayoutMap() ??
       Promise.resolve(getDefaultLayoutMap()),
 
-    ["once"]
+    []
   );
   const keyboardLayout = React.use(layoutPromise);
   const getKeyName = useCallback(

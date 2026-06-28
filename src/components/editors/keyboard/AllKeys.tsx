@@ -58,7 +58,7 @@ export function AllKeys({ selectedChord, onClick }: KeyboardSectionProps) {
       }
       return wellKnownCodeValue(aCode) - wellKnownCodeValue(bCode);
     });
-    return codes.map(([code, _]) => code);
+    return codes.map(([code]) => code);
   }, [getKeyName, isFallback]);
 
   return (
@@ -68,9 +68,8 @@ export function AllKeys({ selectedChord, onClick }: KeyboardSectionProps) {
       openContent={
         <div className="flex max-w-120 flex-wrap gap-2">
           {sortedCodes.map(code => (
-            <button onClick={() => onClick(code)}>
+            <button key={code} onClick={() => onClick(code)}>
               <KeyCode
-                key={code}
                 code={code}
                 className={displayKey({
                   selectedCode: selectedChord?.code === code,

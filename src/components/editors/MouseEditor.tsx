@@ -63,7 +63,7 @@ export function MouseEditor({
         >
           <Save />
         </Button>
-        <MouseAction
+        <MouseActionEditor
           action={mouseAction}
           onClick={action =>
             onUpdatedMouse({ action, modifier: mouseModifier })
@@ -183,7 +183,7 @@ const MOUSE_ACTION_TYPES: RadioOption<MouseActionVariant | "None">[] = [
   { value: "Wheel", label: "Wheel", icon: () => <Mouse className="size-4" /> },
 ];
 
-function MouseAction({ action, onClick }: MouseActionProps) {
+function MouseActionEditor({ action, onClick }: MouseActionProps) {
   const actionType = useMemo(() => {
     const actionType = action
       ? action.type === "Move"

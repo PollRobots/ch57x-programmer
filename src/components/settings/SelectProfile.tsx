@@ -115,7 +115,7 @@ export function SelectProfile({
               className={twJoin(
                 "flex min-w-64 items-center gap-2 rounded-lg border p-2",
                 "border-neutral-300 bg-neutral-50 hover:bg-neutral-100",
-                "2 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800",
+                "dark:border-neutral-600 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800",
                 disabled && "pointer-events-none"
               )}
             >
