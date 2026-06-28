@@ -8,4 +8,4 @@ interface Keyboard {
   unlock: () => void;
 }
 
-interface KeyboardLayoutMap extends Map<string, string> {}
+type KeyboardLayoutMap = Map<string, string>;

@@ -4,6 +4,10 @@ const { LoaderOptionsPlugin } = require("webpack");
 const TerserPlugin = require("terser-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
+const {
+  defineReactCompilerLoaderOption,
+  reactCompilerLoader,
+} = require("react-compiler-webpack");
 
 const PROJECT = "cheese-tax";
 const PAGE_TITLE = "ch57x keyboard tool";
@@ -52,7 +56,20 @@ module.exports = (env, argv) => {
         {
           test: /\.ts(x?)$/,
           exclude: /node_modules/,
-          use: "ts-loader",
+          use: [
+            {
+              loader: "ts-loader",
+              options: {
+                transpileOnly: true,
+              },
+            },
+            {
+              loader: reactCompilerLoader,
+              options: defineReactCompilerLoaderOption({
+                target: "19",
+              }),
+            },
+          ],
         },
         {
           enforce: "pre",

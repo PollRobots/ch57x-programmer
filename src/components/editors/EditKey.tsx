@@ -95,11 +95,11 @@ const macrotab = cva("px-2 py-1 border", {
     selected: {
       true: [
         "border-b-transparent bg-neutral-50 dark:bg-neutral-800",
-        "border-t-neutral-300 border-r-neutral-300 border-l-neutral-300",
-        "dark:border-t-neutral-600 dark:border-r-neutral-600 dark:border-l-neutral-600",
+        "border-t-neutral-300 border-x-neutral-300",
+        "dark:border-t-neutral-600 dark:border-x-neutral-600",
       ],
       false: [
-        "border-t-transparent border-r-transparent border-l-transparent",
+        "border-t-transparent border-x-transparent",
         "border-b-neutral-300 dark:border-b-neutral-600",
       ],
     },
@@ -132,7 +132,7 @@ function MacroEditor({
       </TabList>
       <TabPanels
         className={twJoin(
-          "border-r border-b border-l shadow-md",
+          "border-x border-b shadow-md",
           "border-neutral-300 bg-neutral-50",
           "dark:border-neutral-600 dark:bg-neutral-800"
         )}

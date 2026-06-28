@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useDebounceCallback } from "usehooks-ts";
 
 import { WELL_KNOWN_CODES } from "./key_codes";
@@ -124,65 +131,7 @@ export function useKeyboardDevice({
     { leading: false, trailing: true }
   );
 
-  useEffect(() => {
-    if (!device) {
-      setDeviceType(prev =>
-        prev.buttons === 0 && prev.encoders === 0
-          ? prev
-          : UNKNOWN_KEYBOARD_DEVICE
-      );
-      setPending(false);
-      setErrors(prev => (prev.length === 0 ? prev : []));
-      if (pendingBindings.current.length !== 0) {
-        pendingBindings.current = [];
-      }
-      setKeyBindings(prev => (prev.length === 0 ? prev : []));
-      return;
-    }
-    const listener = (event: HIDInputReportEvent) => {
-      const data = event.data;
-      const array = new Uint8Array(
-        data.buffer,
-        data.byteOffset,
-        data.byteLength
-      );
-
-      switch (keyboard.checkPacketType(array)) {
-        case "device":
-          const deviceType = keyboard.parseDeviceTypePacket(array);
-          if (deviceType !== undefined) {
-            setDeviceType(prev => {
-              if (
-                prev.family === deviceType.family &&
-                prev.buttons === deviceType.buttons &&
-                prev.encoders === deviceType.encoders
-              ) {
-                return prev;
-              }
-              return deviceType;
-            });
-          }
-          break;
-        case "config":
-          const keyBinding = keyboard.parseConfigPacket(array);
-          if (keyBinding) {
-            pendingBindings.current.push(keyBinding);
-            if (!pauseUpdate.current) {
-              updateKeyBindings();
-            }
-          } else {
-            console.warn("Unable to parse config packet", array.slice(0, 16));
-          }
-          break;
-        default:
-          console.warn("Unknown packet", array);
-      }
-    };
-
-    device.addEventListener("inputreport", listener);
-    readDeviceType();
-    return () => device.removeEventListener("inputreport", listener);
-  }, [pauseUpdate, keyboard, device]);
+  const [_inTransition, startTransition] = useTransition();
 
   const readDeviceType = useCallback(() => {
     if (!device || pending) {
@@ -208,6 +157,72 @@ export function useKeyboardDevice({
       .catch(error => setErrors(prev => [...prev, error]))
       .finally(() => setPending(false));
   }, [keyboard, device, pending]);
+
+  useEffect(() => {
+    if (!device) {
+      startTransition(() => {
+        setDeviceType(prev =>
+          prev.buttons === 0 && prev.encoders === 0
+            ? prev
+            : UNKNOWN_KEYBOARD_DEVICE
+        );
+        setPending(false);
+        setErrors(prev => (prev.length === 0 ? prev : []));
+        if (pendingBindings.current.length !== 0) {
+          pendingBindings.current = [];
+        }
+        setKeyBindings(prev => (prev.length === 0 ? prev : []));
+      });
+      return;
+    }
+    const listener = (event: HIDInputReportEvent) => {
+      const data = event.data;
+      const array = new Uint8Array(
+        data.buffer,
+        data.byteOffset,
+        data.byteLength
+      );
+
+      switch (keyboard.checkPacketType(array)) {
+        case "device": {
+          const deviceType = keyboard.parseDeviceTypePacket(array);
+          if (deviceType !== undefined) {
+            setDeviceType(prev => {
+              if (
+                prev.family === deviceType.family &&
+                prev.buttons === deviceType.buttons &&
+                prev.encoders === deviceType.encoders
+              ) {
+                return prev;
+              }
+              return deviceType;
+            });
+          }
+          break;
+        }
+        case "config": {
+          const keyBinding = keyboard.parseConfigPacket(array);
+          if (keyBinding) {
+            pendingBindings.current.push(keyBinding);
+            if (!pauseUpdate.current) {
+              updateKeyBindings();
+            }
+          } else {
+            console.warn("Unable to parse config packet", array.slice(0, 16));
+          }
+          break;
+        }
+        default:
+          console.warn("Unknown packet", array);
+      }
+    };
+
+    device.addEventListener("inputreport", listener);
+    startTransition(() => {
+      readDeviceType();
+    });
+    return () => device.removeEventListener("inputreport", listener);
+  }, [pauseUpdate, keyboard, device, readDeviceType, updateKeyBindings]);
 
   const readConfiguration = useCallback(() => {
     if (!device || pending || !keyboard.capabilities.readConfiguration) {
@@ -276,7 +291,14 @@ export function useKeyboardDevice({
           setPending(false);
         });
     },
-    [keyboard, device, pending, readConfiguration, keyBindings]
+    [
+      device,
+      pending,
+      readConfiguration,
+      keyBindings.length,
+      updateKeyBindings,
+      keyboard,
+    ]
   );
 
   return {

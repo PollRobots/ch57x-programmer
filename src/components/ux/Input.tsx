@@ -7,7 +7,7 @@ import { Tooltip } from "./Tooltip";
 const input = cva(
   [
     "block w-full rounded-lg border-none px-3 py-1.5",
-    "bg-neutral-50 text-primary dark:bg-neutral-950 dark:text-white",
+    "bg-neutral-50 text-default dark:bg-neutral-950 dark:text-white",
     "outline-none focus:outline-solid focus:outline-1 focus:outline-offset-2",
     "focus:outline-neutral-400 dark:focus:outline-neutral-500",
   ],

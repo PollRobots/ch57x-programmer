@@ -2,6 +2,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { cva } from "class-variance-authority";
 import { Asterisk, HardDriveDownload, HardDriveUpload } from "lucide-react";
 import React, {
+  startTransition,
   useCallback,
   useEffect,
   useMemo,
@@ -78,7 +79,10 @@ export function App() {
   const [selectedProfile, setSelectedProfile] = useState<
     KeyboardProfile | undefined
   >(() => profiles.find(p => p.name.toLowerCase() === "default"));
-  const profileBindings = selectedProfile?.bindingsByLayer ?? [];
+  const profileBindings = useMemo(
+    () => selectedProfile?.bindingsByLayer ?? [],
+    [selectedProfile]
+  );
 
   const currentDevice = useMemo(
     () => (selectedDevice >= 0 ? devices[selectedDevice] : undefined),
@@ -183,27 +187,24 @@ export function App() {
       setOriginPreference("profile");
       setEditedBindings([]);
     },
-    [currentDevice, selectedLayout, keyboardDeviceType, bindingsByLayer]
+    [
+      currentDevice,
+      keyboardDeviceType,
+      userKeyboardDeviceType,
+      selectedLayout,
+      bindingsByLayer,
+    ]
   );
-
-  const onVisibilityChange = useCallback(() => {
-    if (document.hidden) {
-      saveProfiles(profiles);
-    } else {
-      scan(false);
-    }
-  }, [profiles]);
-
-  const documentRef = useRef(document);
-  useEventListener("visibilitychange", onVisibilityChange, documentRef);
 
   useEffect(() => {
     if (currentDevice === undefined) {
-      setKeyboardDevice(prev => {
-        if (prev.keyboard.name === NoopKeyboard.name) {
-          return prev;
-        }
-        return { keyboard: NoopKeyboard };
+      startTransition(() => {
+        setKeyboardDevice(prev => {
+          if (prev.keyboard.name === NoopKeyboard.name) {
+            return prev;
+          }
+          return { keyboard: NoopKeyboard };
+        });
       });
       return;
     }
@@ -254,12 +255,24 @@ export function App() {
     [selectedDevice]
   );
 
+  const onVisibilityChange = useCallback(() => {
+    if (document.hidden) {
+      saveProfiles(profiles);
+    } else {
+      scan(false);
+    }
+  }, [profiles, scan]);
+  const documentRef = useRef(document);
+  useEventListener("visibilitychange", onVisibilityChange, documentRef);
+
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
     if (!started) {
-      setStarted(true);
-      scan(false);
+      startTransition(() => {
+        setStarted(true);
+        scan(false);
+      });
     }
   }, [started, scan]);
 
@@ -352,7 +365,7 @@ export function App() {
     }
     setEditedBindings(updated);
     setWorkingMacro(undefined);
-  }, [workingMacro, currentBinding, bindingsByLayer, editedBindings]);
+  }, [workingMacro, currentBinding, editedBindings]);
 
   const selectProfile = useCallback((profile: KeyboardProfile | undefined) => {
     if (profile) {
@@ -393,7 +406,7 @@ export function App() {
       })
       .catch(error => console.error(error))
       .finally(() => setWriting(false));
-  }, [writing, writeKeyBindings]);
+  }, [writing, writeKeyBindings, bindingsByLayer, readConfiguration]);
 
   if (hidChange === "NotSupported") {
     return <Unsupported />;

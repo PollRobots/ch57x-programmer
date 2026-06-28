@@ -99,7 +99,6 @@ export function loadProfiles(): KeyboardProfile[] {
       const profile = loadProfile(key);
       if (profile) {
         profiles.push(profile);
-      } else {
       }
     }
   }

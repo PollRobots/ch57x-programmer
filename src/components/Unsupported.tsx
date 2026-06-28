@@ -17,12 +17,12 @@ export function Unsupported() {
           ch57x keyboard tool
         </H1>
         <Text>
-          Unfortunately, either your browser doesn't support WebHID, or you have
-          a security setting preventing access to HID devices.
+          Unfortunately, either your browser doesn&rsquo;t support WebHID, or
+          you have a security setting preventing access to HID devices.
         </Text>
         {mobile && (
           <Text>
-            It appears that you are using a mobile device. WebHID isn't
+            It appears that you are using a mobile device. WebHID isn&rsquo;t
             currently supported on any mobile browser or platform.
           </Text>
         )}
@@ -39,6 +39,7 @@ export function Unsupported() {
             href="https://mozilla.github.io/standards-positions"
             className="text-blue-500"
             target="_blank"
+            rel="noreferrer"
           >
             Mozilla Standards Positions
           </a>
@@ -86,8 +87,8 @@ export function Unsupported() {
               </Text>{" "}
             </Text>
             <Text className="italic">
-              You will need to cut and paste this URL, chrome doesn't allow
-              direct links to settings pages
+              You will need to cut and paste this URL, chrome doesn&rsquo;t
+              allow direct links to settings pages
             </Text>
             <H4>2. Per-site</H4>
             <Text>

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useState } from "react";
 
 import { isWellKnownCode, wellKnownCodeFromValue } from "@model/key_codes";
 import { codeValue } from "@model/keyboard";
@@ -12,16 +12,13 @@ import { displayKey, KeyboardSectionProps } from "./KeyboardSection";
 
 export function KeyboardCode({ selectedChord, onClick }: KeyboardSectionProps) {
   const { getCodeName } = useKeyboardLayout();
-  const chordValue = useMemo(
-    () =>
-      selectedChord && selectedChord.code !== undefined
-        ? `0x${codeValue(selectedChord.code).toString(16).padStart(2, "0")}`
-        : "-",
-    [selectedChord]
-  );
+  const chordValue =
+    selectedChord && selectedChord.code !== undefined
+      ? `0x${codeValue(selectedChord.code).toString(16).padStart(2, "0")}`
+      : "-";
   const [editedValue, setEditedValue] = useState<string | undefined>();
 
-  const updateValue = useCallback((value: string) => {
+  const updateValue = (value: string) => {
     const number = Number(value);
     if (Number.isInteger(number) && number >= 0 && number <= 255) {
       const wellKnownCode = wellKnownCodeFromValue(number);
@@ -34,11 +31,10 @@ export function KeyboardCode({ selectedChord, onClick }: KeyboardSectionProps) {
       return;
     }
     setEditedValue(value);
-  }, []);
+  };
 
   return (
     <Expando
-      defaultOpen
       collapseDirection="up"
       title={<H4>Key details</H4>}
       openContent={

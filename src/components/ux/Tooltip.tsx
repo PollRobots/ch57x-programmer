@@ -5,7 +5,7 @@ import { twMerge } from "tailwind-merge";
 
 import { useRem } from "@hooks/useRem";
 
-const tooltip = cva("font-xs max-w-sm rounded-lg px-4 py-2 shadow-xl", {
+const tooltip = cva("text-xs max-w-sm rounded-lg px-4 py-2 shadow-xl", {
   variants: {
     inverted: {
       true: "dark:text-default dark:bg-white bg-neutral-800 text-white",

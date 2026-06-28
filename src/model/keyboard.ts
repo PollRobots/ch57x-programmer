@@ -212,7 +212,7 @@ export function isModifier(value: unknown): value is Modifier {
   return ModifierSchema.safeParse(value).success;
 }
 
-const PLATFORM_MODIFIERS = [
+export const PLATFORM_MODIFIERS = [
   "Opt",
   "Win",
   "Cmd",

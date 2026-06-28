@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 
 export type HidChange = "None" | "NotSupported" | "Connected" | "Disconnected";
 
@@ -18,7 +18,7 @@ export function useHidChange(onChange: (change: HidChange) => void): HidChange {
     const onDisconnect = () => change("Disconnected");
 
     if (navigator.hid === undefined) {
-      change("NotSupported");
+      startTransition(() => change("NotSupported"));
       return;
     }
 

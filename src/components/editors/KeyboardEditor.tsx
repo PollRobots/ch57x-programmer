@@ -135,7 +135,7 @@ export function KeyboardEditor({
         className="flex flex-row flex-wrap gap-1"
       >
         {keyChords.map((keyChord, i) => (
-          <Radio value={i} as={React.Fragment}>
+          <Radio key={i} value={i} as={React.Fragment}>
             <div className={sequencekey({ selected: i === selectedKey })}>
               <DisplayKeyChord key={i} {...keyChord} />
             </div>

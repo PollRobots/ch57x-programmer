@@ -40,7 +40,7 @@ export function SettingsEditor({
       };
       onChange(update);
     },
-    [mode, scale]
+    [mode, onChange, scale]
   );
 
   return (
@@ -75,7 +75,7 @@ function GitHub({ className, ...other }: React.ComponentProps<"div">) {
   return (
     <div
       className={twMerge(
-        "stretch-items flex text-black dark:text-white",
+        "flex items-stretch text-black dark:text-white",
         className
       )}
       {...other}
