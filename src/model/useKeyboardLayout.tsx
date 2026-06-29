@@ -1,6 +1,6 @@
 import React, { createContext, Suspense, useCallback, useContext } from "react";
 
-import { keyboardEventCodeFromWellKnowCode, WellKnownCode } from "./key_codes";
+import { keyboardEventCodeFromWellKnownCode, WellKnownCode } from "./key_codes";
 
 export type KeyboardLayout = {
   isFallback: boolean;
@@ -8,14 +8,10 @@ export type KeyboardLayout = {
   getCodeName: (wellKnownCode: WellKnownCode) => string | undefined;
 };
 
-export function useKeyboardLayoutRoot(): KeyboardLayout {
-  const layoutPromise = React.useMemo(
-    () =>
-      navigator.keyboard?.getLayoutMap() ??
-      Promise.resolve(getDefaultLayoutMap()),
+const layoutPromise =
+  navigator.keyboard?.getLayoutMap() ?? Promise.resolve(getDefaultLayoutMap());
 
-    []
-  );
+export function useKeyboardLayoutRoot(): KeyboardLayout {
   const keyboardLayout = React.use(layoutPromise);
   const getKeyName = useCallback(
     (code: string) => keyboardLayout.get(code) ?? code,
@@ -23,7 +19,7 @@ export function useKeyboardLayoutRoot(): KeyboardLayout {
   );
   const getCodeName = useCallback(
     (code: WellKnownCode) => {
-      const eventCode = keyboardEventCodeFromWellKnowCode(code);
+      const eventCode = keyboardEventCodeFromWellKnownCode(code);
       return getKeyName(eventCode);
     },
     [getKeyName]
@@ -40,7 +36,7 @@ const KeyboardLayoutContext = createContext<KeyboardLayout>({
   isFallback: true,
   getKeyName: (code: string) => code,
   getCodeName: (wellKnownCode: WellKnownCode) =>
-    keyboardEventCodeFromWellKnowCode(wellKnownCode),
+    keyboardEventCodeFromWellKnownCode(wellKnownCode),
 });
 
 export function KeyboardLayoutProvider({ children }: React.PropsWithChildren) {

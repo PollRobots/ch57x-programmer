@@ -5,9 +5,11 @@ export function GlobalErrorWrapper({ children }: React.PropsWithChildren) {
   const { showBoundary } = useErrorBoundary();
   useEffect(() => {
     const onError = (event: ErrorEvent) => {
+      console.error(event.error);
       showBoundary(event.error);
     };
     const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error(event.reason);
       showBoundary(event.reason);
     };
 

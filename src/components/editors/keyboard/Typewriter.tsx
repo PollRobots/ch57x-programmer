@@ -36,7 +36,7 @@ const CUSTOM_WIDTHS = new Map<string, string>([
 export function Typewriter({ selectedChord, onClick }: KeyboardSectionProps) {
   return (
     <div className={keyboardSection()}>
-      <H4>Keyboard</H4>
+      <H4 className="h-7">Keyboard</H4>
       {TYPEWRITER_ROWS.map((row, i) => {
         return (
           <div key={i} className="flex flex-row justify-between gap-1">

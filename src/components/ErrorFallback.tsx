@@ -10,7 +10,7 @@ export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   const actualError = error instanceof Error ? error : undefined;
   return (
     <Page className="flex justify-around">
-      <div className="m-auto flex size-fit flex-col gap-4 bg-white p-4 shadow-xl dark:bg-neutral-900">
+      <div className="m-auto flex size-fit flex-col items-start gap-4 bg-white p-4 shadow-xl dark:bg-neutral-900">
         <H2>Something went wrong</H2>
         <Text>{actualError ? actualError.message : `${error}`}</Text>
         <Button

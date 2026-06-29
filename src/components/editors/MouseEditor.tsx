@@ -42,14 +42,7 @@ export function MouseEditor({
   return (
     <div className="flex min-w-[46rem] flex-col gap-2 p-2">
       <Text strong>Mouse action</Text>
-      <Text
-        size="sm"
-        className={
-          edited
-            ? "text-red-700 dark:text-red-500"
-            : "text-secondary dark:text-white"
-        }
-      >
+      <Text size="sm" danger={edited}>
         {edited
           ? "This is the edited code, not yet bound to this key"
           : "This is the current code bound to this key"}

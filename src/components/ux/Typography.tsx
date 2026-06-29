@@ -30,6 +30,10 @@ const typography = cva("", {
       true: "font-semibold",
       false: null,
     },
+    danger: {
+      false: null,
+      true: "text-red-700",
+    },
   },
 });
 
@@ -77,13 +81,14 @@ function makeTypographyComponent(
   const typographyComponent = ({
     size = fontSize,
     strong = as.startsWith("h"),
+    danger = false,
     className,
     children,
     ...other
   }: React.PropsWithChildren<TypographyProps>) => {
     return (
       <Component
-        className={twMerge(typography({ as, size, strong, className }))}
+        className={twMerge(typography({ as, size, strong, danger, className }))}
         {...other}
       >
         {children}
