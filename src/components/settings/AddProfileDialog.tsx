@@ -56,7 +56,7 @@ export function AddProfileDialog({
               className="mt-2"
             />
             {names.includes(name) && (
-              <Text size="sm" className="text-red-500">
+              <Text size="sm" danger>
                 Each profile must have a unique name.
               </Text>
             )}

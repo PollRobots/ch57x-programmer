@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from "class-variance-authority";
-import React from "react";
+import React, { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 
 import { Tooltip } from "./Tooltip";
@@ -54,23 +54,22 @@ export function Button({
   children,
   ...other
 }: React.PropsWithChildren<ButtonProps>) {
-  const core = (
-    <button
-      className={twMerge(button({ size, variant, disabled, className }))}
-      disabled={disabled ?? undefined}
-      type="button"
-      {...other}
-    >
-      {children}
-    </button>
+  const core = useMemo(
+    () => (
+      <button
+        className={twMerge(button({ size, variant, disabled, className }))}
+        disabled={disabled ?? undefined}
+        type="button"
+        {...other}
+      >
+        {children}
+      </button>
+    ),
+    [children, className, disabled, other, size, variant]
   );
 
   if (description) {
-    return (
-      <Tooltip content={description} arrow>
-        {core}
-      </Tooltip>
-    );
+    return <Tooltip content={description}>{core}</Tooltip>;
   }
   return core;
 }

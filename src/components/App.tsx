@@ -4,7 +4,6 @@ import { Asterisk, HardDriveDownload, HardDriveUpload } from "lucide-react";
 import React, {
   startTransition,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -12,6 +11,7 @@ import React, {
 import { useEventListener } from "usehooks-ts";
 
 import { HidChange, useHidChange } from "@hooks/useHidChange";
+import { useValueChange } from "@hooks/useValueChange";
 import {
   KeyBinding,
   KeyboardDeviceType,
@@ -196,8 +196,8 @@ export function App() {
     ]
   );
 
-  useEffect(() => {
-    if (currentDevice === undefined) {
+  const onDeviceChange = useCallback((workingDevice: HIDDevice | undefined) => {
+    if (workingDevice === undefined) {
       startTransition(() => {
         setKeyboardDevice(prev => {
           if (prev.keyboard.name === NoopKeyboard.name) {
@@ -209,22 +209,29 @@ export function App() {
       return;
     }
 
-    const workingDevice = currentDevice;
     if (!workingDevice.opened) {
       workingDevice
         .open()
         .then(() => {
           if ((workingDevice.productId & 0x884f) === workingDevice.productId) {
-            setKeyboardDevice({
-              keyboard: makeKeyboard884x(),
-              device: workingDevice,
-            });
+            setKeyboardDevice(prev =>
+              prev.device !== workingDevice
+                ? {
+                    keyboard: makeKeyboard884x(),
+                    device: workingDevice,
+                  }
+                : prev
+            );
           }
           if (workingDevice.productId === 0x8890) {
-            setKeyboardDevice({
-              keyboard: makeKeyboard8890(),
-              device: workingDevice,
-            });
+            setKeyboardDevice(prev =>
+              prev.device !== workingDevice
+                ? {
+                    keyboard: makeKeyboard8890(),
+                    device: workingDevice,
+                  }
+                : prev
+            );
           }
         })
         .catch(error =>
@@ -234,12 +241,14 @@ export function App() {
     return () => {
       void workingDevice.close();
     };
-  }, [currentDevice]);
+  }, []);
+  useValueChange(currentDevice, onDeviceChange);
 
   const scan = useCallback(
     (force: boolean) => {
       scanForKeyboard(force)
         .then(devices => {
+          console.log("processed scan", devices);
           setDevices(devices);
           if (devices.length == 0) {
             setSelectedDevice(-1);
@@ -266,15 +275,16 @@ export function App() {
   useEventListener("visibilitychange", onVisibilityChange, documentRef);
 
   const [started, setStarted] = useState(false);
-
-  useEffect(() => {
-    if (!started) {
-      startTransition(() => {
+  const onStarted = useCallback(
+    (value: boolean) => {
+      if (!value) {
         setStarted(true);
         scan(false);
-      });
-    }
-  }, [started, scan]);
+      }
+    },
+    [scan]
+  );
+  useValueChange(started, onStarted, { callOnMount: true });
 
   const onHidCHange = useCallback(
     (change: HidChange) => {
@@ -487,7 +497,7 @@ export function App() {
                   <Text size="sm">Read</Text>
                 </Button>
                 <Button
-                  disabled={writing}
+                  disabled={writing || busy}
                   onClick={onWriteConfiguration}
                   className="flex size-24 flex-col items-center justify-around gap-2"
                   description="Write the current key-bindings to the selected device"

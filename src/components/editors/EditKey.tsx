@@ -46,18 +46,19 @@ export function EditKey({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-row items-baseline gap-2">
+      <div className="flex flex-row items-center gap-2">
         <H3>Edit binding</H3>
-        {updatedMacro && (
-          <Button
-            size="sm"
-            className="flex flex-row items-center gap-2"
-            onClick={() => onChange(undefined)}
-          >
-            <Trash2 className="size-3" />
-            <Text size="sm">Clear</Text>
-          </Button>
-        )}
+        <Button
+          size="sm"
+          className={twJoin(
+            "flex flex-row items-center gap-2",
+            updatedMacro === undefined ? "invisible" : ""
+          )}
+          onClick={() => onChange(undefined)}
+        >
+          <Trash2 className="size-3" />
+          <Text size="sm">Clear</Text>
+        </Button>
         <Text strong className="ml-auto">
           Current binding:
         </Text>

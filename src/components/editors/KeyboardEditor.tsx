@@ -1,7 +1,7 @@
 import { Radio, RadioGroup } from "@headlessui/react";
 import { cva } from "class-variance-authority";
-import { Minus, Plus, Save } from "lucide-react";
-import React, { useCallback, useState } from "react";
+import { Minus, Plus, Save, Type } from "lucide-react";
+import React, { useState } from "react";
 
 import { Code, isModifier, KeyChord, Modifier } from "@model/keyboard";
 import { Button } from "@ux/Button";
@@ -11,6 +11,7 @@ import { DisplayKeyChord } from "../DisplayKeyBinding";
 import { AllKeys } from "./keyboard/AllKeys";
 import { KeyboardCode } from "./keyboard/KeyboardCode";
 import { StandardLayout } from "./keyboard/StandardLayout";
+import { TypeMacroDialog } from "./keyboard/TypeMacroDialog";
 
 export type KeyboardEditorProps = {
   keyChords: KeyChord[];
@@ -72,59 +73,51 @@ export function KeyboardEditor({
   const [selectedKey, setSelectedKey] = useState(0);
   const selectedChord = keyChords[selectedKey];
 
-  const onKeyClick = useCallback(
-    (code: Code | Modifier) => {
-      const updated = [...keyChords];
+  const onKeyClick = (code: Code | Modifier) => {
+    const updated = [...keyChords];
 
-      while (updated.length <= selectedKey) {
-        updated.push({ modifiers: [] });
-      }
+    while (updated.length <= selectedKey) {
+      updated.push({ modifiers: [] });
+    }
 
-      const modified = { ...(updated[selectedKey] ?? { modifiers: [] }) };
-      if (isModifier(code)) {
-        const updatedModifiers = [...modified.modifiers];
-        const index = updatedModifiers.indexOf(code);
-        if (index < 0) {
-          updatedModifiers.push(code);
-        } else {
-          updatedModifiers.splice(index, 1);
-        }
-        modified.modifiers = updatedModifiers;
+    const modified = { ...(updated[selectedKey] ?? { modifiers: [] }) };
+    if (isModifier(code)) {
+      const updatedModifiers = [...modified.modifiers];
+      const index = updatedModifiers.indexOf(code);
+      if (index < 0) {
+        updatedModifiers.push(code);
       } else {
-        modified.code = code;
+        updatedModifiers.splice(index, 1);
       }
-      updated[selectedKey] = modified;
+      modified.modifiers = updatedModifiers;
+    } else {
+      modified.code = code;
+    }
+    updated[selectedKey] = modified;
 
-      onUpdatedKeyChords(updated);
-    },
-    [keyChords, onUpdatedKeyChords, selectedKey]
-  );
+    onUpdatedKeyChords(updated);
+  };
 
-  const addKeyChord = useCallback(() => {
+  const addKeyChord = () => {
     const updated = [...keyChords];
     updated.push({ modifiers: [] });
     onUpdatedKeyChords(updated);
     setSelectedKey(updated.length - 1);
-  }, [keyChords, onUpdatedKeyChords]);
+  };
 
-  const removeKeyChord = useCallback(() => {
+  const removeKeyChord = () => {
     const updated = [...keyChords];
     updated.splice(selectedKey, 1);
     onUpdatedKeyChords(updated);
     setSelectedKey(Math.min(selectedKey, updated.length - 1));
-  }, [keyChords, selectedKey, onUpdatedKeyChords]);
+  };
+
+  const [typeMacro, setTypeMacro] = useState(false);
 
   return (
-    <div className="flex min-w-184 flex-col gap-2 p-2">
+    <div className="flex w-184 flex-col gap-2 p-2">
       <Text strong>Key sequence</Text>
-      <Text
-        size="sm"
-        className={
-          edited
-            ? "text-red-700 dark:text-red-500"
-            : "text-secondary dark:text-white"
-        }
-      >
+      <Text size="sm" danger={edited}>
         {edited
           ? "This is the edited sequence, not yet bound to this key"
           : "This is the current sequence bound to this key"}
@@ -161,6 +154,20 @@ export function KeyboardEditor({
               <Minus />
             </Button>
           )}
+        <Button
+          variant="invisible"
+          description={
+            typeMacro
+              ? undefined
+              : "Use your keyboard to enter the key sequence"
+          }
+          className={editkey({
+            dashed: false,
+          })}
+          onClick={() => setTypeMacro(true)}
+        >
+          <Type />
+        </Button>
         {edited && (
           <Button
             variant="invisible"
@@ -174,6 +181,13 @@ export function KeyboardEditor({
       <StandardLayout selectedChord={selectedChord} onClick={onKeyClick} />
       <AllKeys selectedChord={selectedChord} onClick={onKeyClick} />
       <KeyboardCode selectedChord={selectedChord} onClick={onKeyClick} />
+      <TypeMacroDialog
+        initialValue={keyChords}
+        show={typeMacro}
+        limit={maxKeySequence}
+        onClose={() => setTypeMacro(false)}
+        onTyped={onUpdatedKeyChords}
+      />
     </div>
   );
 }

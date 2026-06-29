@@ -67,7 +67,9 @@ const NUMPAD_KEYS: NumPadKeyDef[] = [
 function NumPadKeys({ selectedChord, onClick }: KeyboardSectionProps) {
   return (
     <div className={keyboardSection()}>
-      <H4 size="md">Number pad</H4>
+      <H4 size="md" className="h-7">
+        Number pad
+      </H4>
       <div className="grid grid-cols-4 gap-x-1 gap-y-2">
         <div className="col-span-4 h-7" />
         {NUMPAD_KEYS.map(({ code, wide, tall }) => {
@@ -111,7 +113,9 @@ const ARROW_KEYS_ETC : (WellKnownCode|"blank-line"|"empty")[] = [
 function ArrowKeysEtc({ selectedChord, onClick }: KeyboardSectionProps) {
   return (
     <div className={keyboardSection()}>
-      <H4 size="md">Navigation</H4>
+      <H4 size="md" className="h-7">
+        Navigation
+      </H4>
       <div className="grid grid-cols-3 grid-rows-5 gap-x-1 gap-y-2">
         {ARROW_KEYS_ETC.map((code, i) => {
           if (code === "blank-line") {
