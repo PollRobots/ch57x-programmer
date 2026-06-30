@@ -111,14 +111,26 @@ export function App() {
       .fill(null)
       .map(() => []);
 
+    const buttons =
+      userKeyboardDeviceType?.buttons ?? keyboardDeviceType.buttons;
+    const encoders =
+      userKeyboardDeviceType?.encoders ?? keyboardDeviceType.encoders;
+
     const bindingByPriority =
       originPreference === "profile"
         ? [profileBindings.flat(), keyBindings]
         : [keyBindings, profileBindings.flat()];
     for (const bindingSet of bindingByPriority) {
       for (const binding of bindingSet) {
-        while (binding.layer >= layers.length) {
-          layers.push([]);
+        if (binding.layer >= layers.length) {
+          continue;
+        }
+        if (typeof binding.key === "number") {
+          if (binding.key >= buttons) {
+            continue;
+          }
+        } else if (binding.key[0] >= encoders) {
+          continue;
         }
         const layer = layers[binding.layer]!;
         if (!layer.some(({ key }) => keysAreEqual(key, binding.key))) {
@@ -145,10 +157,14 @@ export function App() {
   }, [
     editedBindings,
     keyBindings,
+    keyboardDeviceType.buttons,
+    keyboardDeviceType.encoders,
     keyboardDeviceType.layers,
     originPreference,
     profileBindings,
-    userKeyboardDeviceType,
+    userKeyboardDeviceType?.buttons,
+    userKeyboardDeviceType?.encoders,
+    userKeyboardDeviceType?.layers,
   ]);
 
   const addProfile = useCallback(

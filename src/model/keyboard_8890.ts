@@ -97,6 +97,8 @@ export function makeKeyboard8890(): Keyboard {
         }
       }
 
+      messages.push([0xaa, 0xaa]);
+
       return messages;
     },
     setLed: () => {

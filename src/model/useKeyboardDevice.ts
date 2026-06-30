@@ -246,29 +246,30 @@ export function useKeyboardDevice({
       if (!device || pending || pauseUpdate.current) {
         return false;
       }
-      pauseUpdate.current = true;
-      readConfiguration();
-
+      if (keyboard.capabilities.readConfiguration) {
+        pauseUpdate.current = true;
+        readConfiguration();
+      }
       const started = performance.now();
-      const deviceBindings = await new Promise<KeyBinding[]>(
-        (resolve, reject) => {
-          const write = () => {
-            if (keyBindings.length == pendingBindings.current.length) {
-              const bindings = pendingBindings.current;
-              pauseUpdate.current = false;
-              pendingBindings.current = [];
-              resolve(bindings);
-            } else if (performance.now() - started > 500) {
-              pauseUpdate.current = false;
-              updateKeyBindings();
-              reject(new Error("Timed out waiting for key bindings"));
-            } else {
-              requestAnimationFrame(write);
-            }
-          };
-          requestAnimationFrame(write);
-        }
-      );
+      const deviceBindings = keyboard.capabilities.readConfiguration
+        ? await new Promise<KeyBinding[]>((resolve, reject) => {
+            const write = () => {
+              if (keyBindings.length == pendingBindings.current.length) {
+                const bindings = pendingBindings.current;
+                pauseUpdate.current = false;
+                pendingBindings.current = [];
+                resolve(bindings);
+              } else if (performance.now() - started > 500) {
+                pauseUpdate.current = false;
+                updateKeyBindings();
+                reject(new Error("Timed out waiting for key bindings"));
+              } else {
+                requestAnimationFrame(write);
+              }
+            };
+            requestAnimationFrame(write);
+          })
+        : [];
 
       setPending(true);
       try {
